@@ -1,11 +1,51 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { Image, StyleSheet, Platform, Pressable } from 'react-native';
+import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
 
-import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { Collapsible } from '@/components/Collapsible';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  // Configure the audio to allow playback in background on iOS
+  Audio.setAudioModeAsync({
+    allowsRecordingIOS: false,
+    staysActiveInBackground: false,
+    interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+    playsInSilentModeIOS: true,
+    shouldDuckAndroid: true,
+    interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+    playThroughEarpieceAndroid: false,
+  });
+
+  async function handlePlayPause() {
+    try {
+      if (sound && isPlaying) {
+        // If audio is playing, pause it
+        await sound.pauseAsync();
+        setIsPlaying(false);
+      } else if (sound && !isPlaying) {
+        // If audio is loaded but paused, resume it
+        await sound.playAsync();
+        setIsPlaying(true);
+      } else {
+        // If there is no sound loaded, load it, then play
+        const { sound: newSound } = await Audio.Sound.createAsync(
+          require('@/assets/audio/sample-podcast.mp3') // Replace with your podcast file
+        );
+        setSound(newSound);
+        setIsPlaying(true);
+        await newSound.playAsync();
+      }
+    } catch (error) {
+      console.error('Audio Player Error:', error);
+    }
+  }
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -14,40 +54,77 @@ export default function HomeScreen() {
           source={require('@/assets/images/partial-react-logo.png')}
           style={styles.reactLogo}
         />
-      }>
+      }
+    >
+      {/* Title Section */}
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
+        <ThemedText type="title">Today's Podcast</ThemedText>
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
+
+      {/* Podcast Player Section */}
+      <ThemedView style={styles.playerContainer}>
+        <Pressable onPress={handlePlayPause} style={styles.playButton}>
+          <ThemedText type="subtitle">
+            {isPlaying ? 'Pause Podcast' : 'Play Podcast'}
+          </ThemedText>
+        </Pressable>
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
+
+      {/* Expandable Sections for Stories */}
+      <ThemedView style={styles.section}>
+        <ThemedText type="subtitle">Featured Stories</ThemedText>
+
+        {/* Example Story 1 */}
+        <Collapsible title="Story 1: Big News Update">
+          <Image
+            source={require('@/assets/images/news-example-1.png')} // Replace with an actual image
+            style={styles.storyImage}
+            resizeMode="cover"
+          />
+          <ThemedText>
+            A brief summary of the story, including key points and context. This
+            is just a placeholder. You can also add sources, e.g.,{' '}
+            <ThemedText type="defaultSemiBold">
+              BBC News, CNN, Reuters
+            </ThemedText>{' '}
+            etc.
+          </ThemedText>
+        </Collapsible>
+
+        {/* Example Story 2 */}
+        <Collapsible title="Story 2: Tech Stocks Rally">
+          <Image
+            source={require('@/assets/images/news-example-2.png')} // Replace with an actual image
+            style={styles.storyImage}
+            resizeMode="cover"
+          />
+          <ThemedText>
+            Another engaging story. Provide brief context, why it matters, and
+            potential impact. Add relevant source links or citations as
+            needed.
+          </ThemedText>
+        </Collapsible>
+
+        {/* Example Story 3 */}
+        <Collapsible title="Story 3: Sports Highlights">
+          <Image
+            source={require('@/assets/images/news-example-3.png')} // Replace with an actual image
+            style={styles.storyImage}
+            resizeMode="cover"
+          />
+          <ThemedText>
+            Talk about the game, the score, the star players, and any
+            interesting anecdotes or controversies. Include links or references
+            for more details.
+          </ThemedText>
+        </Collapsible>
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
+
+      {/* Additional Episode Details */}
+      <ThemedView style={styles.section}>
+        <ThemedText type="subtitle">Episode Details</ThemedText>
         <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
+          Provide more insight on today's podcast or any relevant announcements.
         </ThemedText>
       </ThemedView>
     </ParallaxScrollView>
@@ -55,20 +132,45 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
   reactLogo: {
     height: 178,
     width: 290,
     bottom: 0,
     left: 0,
     position: 'absolute',
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  playerContainer: {
+    margin: 16,
+    padding: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+  },
+  playButton: {
+    backgroundColor: '#3A86FF',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  section: {
+    marginVertical: 16,
+    padding: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  storyImage: {
+    width: '100%',
+    height: 180,
+    marginTop: 8,
+    marginBottom: 8,
+    borderRadius: 8,
   },
 });
