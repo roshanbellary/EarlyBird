@@ -14,7 +14,7 @@ class NewsScraperAgent:
         self.perplexity = PerplexityAPI(perplexity_api_key)
 
     def get_top_headlines(self, prompt):
-        data = self.perplexity.perplexity_query(["List exactly 5 headlines from the last 24 hours related to the user prompt. Format as follows: [First headline, Second headline, Third headline, Fourth headline, Fifth headline]", prompt])
+        data = self.perplexity.perplexity_query(["List exactly 5 headlines from the last 24 hours related to the user prompt. Format as follows:1. <HEADLINE>[First headline] </HEADLINE> 2. <HEADLINE> [Second headline] </HEADLINE>\n3.<HEADLINE> [Third headline] </HEADLINE>\n4. <HEADLINE>[Fourth headline]<HEADLINE/>\n5. <HEADLINE>[Fifth headline]<HEADLINE/>", prompt])
 
         if "choices" in data and len(data["choices"]) > 0:
             result = {
