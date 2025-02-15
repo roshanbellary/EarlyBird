@@ -11,51 +11,6 @@ if not PERPLEXITY_API_KEY:
     print("PERPLEXITY_API_KEY not found in environment variables. Please check your .env file.")
     sys.exit(1)
 
-def get_top_headlines(prompt):
-    url = "https://api.perplexity.ai/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {PERPLEXITY_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": "sonar-pro",
-        "messages": [
-            {
-                "role": "system", 
-                "content": "List exactly 5 headlines from the last 24 hours related to the user prompt. Format as follows:1. [First headline]\n2. [Second headline]\n3. [Third headline]\n4. [Fourth headline]\n5. [Fifth headline]"
-            },
-            {
-                "role": "user", 
-            "content": prompt
-            }
-        ],
-        "max_tokens": 500,
-        # return images is an option
-    }
-
-    try:
-        response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-    except requests.exceptions.RequestException as err:
-        print("Error fetching data:", err)
-        return None
-
-    try:
-        data = response.json()
-    except ValueError as err:
-        print("Error parsing JSON:", err)
-        return None
-
-    if "choices" in data and len(data["choices"]) > 0:
-        result = {
-            "content": data["choices"][0]["message"]["content"],
-            "citations": data.get("citations", [])
-        }
-        return result
-    else:
-        print("Unexpected response structure:", data)
-        return None
-
 def get_detailed_report(prompt):
     url = "https://api.perplexity.ai/chat/completions"
     headers = {
