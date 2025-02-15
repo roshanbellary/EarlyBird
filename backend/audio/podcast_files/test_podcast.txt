@@ -1,0 +1,39 @@
+<HOST>
+Welcome to our podcast. Today, we're diving into the topic of DMT.
+</HOST>
+<EXPERT>
+Thanks for having me. I'm excited to share my experiences.
+</EXPERT>
+<HOST>
+So how is trying DMT like?
+</HOST>
+<EXPERT>
+IT’S GREAT MAN u should totally try it.
+</EXPERT>
+<HOST>
+Can you describe what happens during the experience?
+</HOST>
+<EXPERT>
+It feels like you're transported to another world. Colors, sounds, and emotions intensify.
+</EXPERT>
+<HOST>
+That sounds intense. Was it overwhelming at any point?
+</HOST>
+<EXPERT>
+Yeah, it can be. It's important to be in the right mindset before trying it.
+</EXPERT>
+<HOST>
+Do you think it's safe for everyone?
+</HOST>
+<EXPERT>
+Not really. It's a powerful substance and should be approached with caution.
+</EXPERT>
+<HOST>
+Thanks for sharing your perspective.
+</HOST>
+<EXPERT>
+No problem. Always do your research before making a choice.
+</EXPERT>
+<HOST>
+That's it for today's episode. Thanks for tuning in.
+</HOST>

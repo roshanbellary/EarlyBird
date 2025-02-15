@@ -7,10 +7,14 @@ import uuid
 from pydub import AudioSegment
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_KEY")
 if not ELEVENLABS_API_KEY:
-    print("Please set the ELEVENLABS_API_KEY environment variable.")
+    print("Please set the ELEVENLABS_KEY environment variable.")
     sys.exit(1)
 
 # Map speaker names to voice IDs
