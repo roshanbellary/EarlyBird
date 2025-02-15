@@ -10,7 +10,7 @@ import os
 import requests
 
 class DeepResearchAgent:
-    def __init__(self, perplexity_api_key: str):
+    def __init__(self, perplexity_api_key: str, prompt: str = None):
         self.perplexity = PerplexityAPI(perplexity_api_key)
         self.prompt_template = """
         Conduct deep research on the following news story:
