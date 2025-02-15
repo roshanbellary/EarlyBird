@@ -1,50 +1,130 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Image, StyleSheet, Platform, Pressable } from 'react-native';
-import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
+import TrackPlayer, { 
+  useTrackPlayerEvents, 
+  Event, 
+  State, 
+  usePlaybackState,
+  useProgress
+} from 'react-native-track-player';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { Collapsible } from '@/components/Collapsible';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
+const SAMPLE_AUDIO = require('@assets/audio/test_podcast.mp3');
+
+// Setup the player
+async function setupPlayer() {
+  try {
+    // Reset any existing player state first
+    await TrackPlayer.reset();
+    
+    // Initialize the player
+    const setup = await TrackPlayer.setupPlayer({
+      autoHandleInterruptions: true,
+      waitForBuffer: true,
+    });
+    
+    if (!setup) {
+      throw new Error('Failed to setup player');
+    }
+    
+    // Add track
+    await TrackPlayer.add({
+      id: 'podcastTrack',
+      url: SAMPLE_AUDIO,
+      title: "Today's Podcast",
+      artist: 'Early Bird',
+      artwork: require('@/assets/images/partial-react-logo.png'),
+      duration: 0,
+      pitchAlgorithm: Platform.select({ ios: 'PITCH_ALGORITHM_TIMEDELTA', android: 'PITCH_ALGORITHM_SONIC' }),
+    });
+
+    await TrackPlayer.updateOptions({
+      capabilities: [
+        'play',
+        'pause',
+        'stop',
+        'seekTo',
+      ],
+      compactCapabilities: ['play', 'pause', 'stop'],
+      progressUpdateEventInterval: 1,
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error setting up player:', error);
+    throw error;
+  }
+}
+
 export default function HomeScreen() {
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const playbackState = usePlaybackState();
+  const progress = useProgress();
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const playerInitialized = useRef(false);
 
-  // Configure the audio to allow playback in background on iOS
-  Audio.setAudioModeAsync({
-    allowsRecordingIOS: false,
-    staysActiveInBackground: false,
-    interruptionModeIOS: InterruptionModeIOS.DoNotMix,
-    playsInSilentModeIOS: true,
-    shouldDuckAndroid: true,
-    interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
-    playThroughEarpieceAndroid: false,
-  });
+  // Initialize player when component mounts
+  useEffect(() => {
+    let mounted = true;
 
-  async function handlePlayPause() {
+    async function initializePlayer() {
+      try {
+        if (!playerInitialized.current) {
+          await setupPlayer();
+          playerInitialized.current = true;
+          if (mounted) setIsPlayerReady(true);
+        }
+      } catch (err) {
+        if (mounted) {
+          console.error('Player initialization error:', err);
+          setError(err instanceof Error ? err.message : 'Failed to setup player');
+          setIsPlayerReady(false);
+        }
+      }
+    }
+
+    initializePlayer();
+
+    return () => {
+      mounted = false;
+      TrackPlayer.reset();
+      playerInitialized.current = false;
+    };
+  }, []);
+
+  const handlePlayPause = async () => {
     try {
-      if (sound && isPlaying) {
-        // If audio is playing, pause it
-        await sound.pauseAsync();
-        setIsPlaying(false);
-      } else if (sound && !isPlaying) {
-        // If audio is loaded but paused, resume it
-        await sound.playAsync();
-        setIsPlaying(true);
+      if (!isPlayerReady || !playerInitialized.current) {
+        console.log('Player not ready, attempting to initialize...');
+        await setupPlayer();
+        playerInitialized.current = true;
+        setIsPlayerReady(true);
+      }
+
+      const state = await TrackPlayer.getState();
+      if (state === State.Playing) {
+        await TrackPlayer.pause();
       } else {
-        // If there is no sound loaded, load it, then play
-        const { sound: newSound } = await Audio.Sound.createAsync(
-          require('@/assets/audio/sample-podcast.mp3') // Replace with your podcast file
-        );
-        setSound(newSound);
-        setIsPlaying(true);
-        await newSound.playAsync();
+        await TrackPlayer.play();
       }
     } catch (error) {
-      console.error('Audio Player Error:', error);
+      console.error('Playback Error:', error);
+      setError(error instanceof Error ? error.message : 'Playback error occurred');
     }
-  }
+  };
+
+  // Track player events
+  useTrackPlayerEvents([Event.PlaybackError], async (event) => {
+    if (event.type === Event.PlaybackError) {
+      console.error('Playback error:', event.message);
+    }
+  });
+
+  const isPlaying = playbackState === State.Playing;
 
   return (
     <ParallaxScrollView
@@ -56,6 +136,12 @@ export default function HomeScreen() {
         />
       }
     >
+      {error && (
+        <ThemedView style={styles.errorContainer}>
+          <ThemedText style={styles.errorText}>{error}</ThemedText>
+        </ThemedView>
+      )}
+
       {/* Title Section */}
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Today's Podcast</ThemedText>
@@ -63,11 +149,30 @@ export default function HomeScreen() {
 
       {/* Podcast Player Section */}
       <ThemedView style={styles.playerContainer}>
-        <Pressable onPress={handlePlayPause} style={styles.playButton}>
+        <Pressable 
+          onPress={handlePlayPause} 
+          style={styles.playButton}
+          disabled={!isPlayerReady}
+        >
           <ThemedText type="subtitle">
             {isPlaying ? 'Pause Podcast' : 'Play Podcast'}
           </ThemedText>
         </Pressable>
+
+        {/* Progress Bar */}
+        <ThemedView style={styles.progressContainer}>
+          <ThemedView 
+            style={[
+              styles.progressBar, 
+              { width: `${(progress.position / progress.duration) * 100}%` }
+            ]} 
+          />
+        </ThemedView>
+        
+        {/* Duration */}
+        <ThemedText style={styles.duration}>
+          {formatTime(progress.position)} / {formatTime(progress.duration)}
+        </ThemedText>
       </ThemedView>
 
       {/* Expandable Sections for Stories */}
@@ -131,6 +236,14 @@ export default function HomeScreen() {
   );
 }
 
+// Helper function to format time
+function formatTime(seconds: number): string {
+  if (!seconds) return '00:00';
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
 const styles = StyleSheet.create({
   reactLogo: {
     height: 178,
@@ -172,5 +285,32 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 8,
     borderRadius: 8,
+  },
+  progressContainer: {
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 2,
+    marginTop: 16,
+    width: '100%',
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#3A86FF',
+    borderRadius: 2,
+  },
+  duration: {
+    marginTop: 8,
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    margin: 16,
+    padding: 12,
+    backgroundColor: '#ff000020',
+    borderRadius: 8,
+  },
+  errorText: {
+    color: '#ff0000',
+    textAlign: 'center',
   },
 });
