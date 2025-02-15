@@ -1,7 +1,7 @@
 from scraper import NewsScraperAgent
 from headline_gen import HeadlineGeneratorAgent
 from researcher import DeepResearchAgent
-from drafter import StoryDrafterAgent
+from story_drafter import StoryDrafterAgent
 from script_generator import PodcastScriptGenerator
 
 from langchain.agents import Tool, AgentExecutor, create_react_agent
@@ -12,7 +12,8 @@ from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferMemory
 from typing import List, Dict
 import os
-import requests
+from dotenv import load_dotenv
+load_dotenv()
 
 class NewsPodcastPipeline:
     def __init__(
@@ -48,3 +49,11 @@ class NewsPodcastPipeline:
             scripts.append(script)
         
         return scripts
+
+if __name__ == "__main__":
+    # Initialize the pipeline
+    print(os.getenv("OPENAI_API_KEY"))
+    pipeline = NewsPodcastPipeline(
+        perplexity_api_key=os.getenv("PERPLEXITY_API_KEY"),
+        openai_api_key=os.getenv("OPENAI_API_KEY"))
+    pipeline.generate_podcast()
