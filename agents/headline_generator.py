@@ -9,17 +9,20 @@ import os
 import requests
 
 class HeadlineGeneratorAgent:
-    def __init__(self, openai_api_key: str):
+    def __init__(self, openai_api_key: str, prompt: PromptTemplate):
         self.llm = ChatOpenAI(api_key=openai_api_key, model="gpt-3.5-turbo")
-        self.prompt = PromptTemplate(
-            input_variables=["news_item"],
-            template="""
-            Create an engaging headline for the following news item:
-            {news_item}
-            
-            Make it catchy but informative, suitable for a podcast episode.
-            """
-        )
+        if prompt is None:
+            self.prompt = PromptTemplate(
+                input_variables=["news_item"],
+                template="""
+                Create an engaging headline for the following news item:
+                {news_item}
+                
+                Make it catchy but informative, suitable for a podcast episode.
+                """
+            )
+        else:
+            self.prompt = prompt
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
     
     def generate_headlines(self, news_items: List[Dict]) -> List[Dict]:

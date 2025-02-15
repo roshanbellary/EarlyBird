@@ -1,5 +1,6 @@
 from typing import List, Dict
 import requests
+
 class PerplexityAPI:
     def __init__(self, api_key: str):
         self.api_key = api_key
@@ -14,7 +15,7 @@ class PerplexityAPI:
         messages = []
         for prompt in prompts:
             messages.append({"role": "user", "content": prompt})
-            
+
         data = {
             "model": "sonar",  # or another available model
             "messages": messages,

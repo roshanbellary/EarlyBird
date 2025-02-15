@@ -1,5 +1,5 @@
 from scraper import NewsScraperAgent
-from headline_gen import HeadlineGeneratorAgent
+from headline_generator import HeadlineGeneratorAgent
 from researcher import DeepResearchAgent
 from story_drafter import StoryDrafterAgent
 from script_generator import PodcastScriptGenerator

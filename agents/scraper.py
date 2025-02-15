@@ -12,49 +12,9 @@ import requests
 class NewsScraperAgent:
     def __init__(self, perplexity_api_key: str):
         self.perplexity = PerplexityAPI(perplexity_api_key)
-        self.prompt = """
-        Find the top 5 current news events. For each event, provide:
-        1. A brief summary
-        2. The main entities involved
-        3. The potential impact
-        
-        Format each event as:
-        EVENT 1:
-        Summary: [summary]
-        Entities: [entities]
-        Impact: [impact]
-        
-        EVENT 2:
-        ...
-        """
-    
-    # def scrape_news(self) -> List[Dict]:
-    #     response = self.perplexity.query(self.prompt)
-    #     print(response)
-    #     # Parse the response into structured format
-    #     events = []
-    #     current_event = {}
-        
-    #     for line in response.split('\n'):
-    #         line = line.strip()
-    #         if line.startswith('## EVENT'):
-    #             if current_event:
-    #                 events.append(current_event)
-    #             current_event = {}
-    #         elif line.startswith('**Summary**:'):
-    #             current_event['summary'] = line[8:].strip()
-    #         elif line.startswith('**Entities**:'):
-    #             current_event['entities'] = line[9:].strip()
-    #         elif line.startswith('**Impact**:'):
-    #             current_event['impact'] = line[7:].strip()
-        
-    #     if current_event:
-    #         events.append(current_event)
-            
-    #     return events
 
-    def get_top_headlines(prompt):
-        data = perplexity_query(["List exactly 5 headlines from the last 24 hours related to the user prompt. Format as follows:1. [First headline]\n2. [Second headline]\n3. [Third headline]\n4. [Fourth headline]\n5. [Fifth headline]", prompt])
+    def get_top_headlines(self, prompt):
+        data = self.perplexity.perplexity_query(["List exactly 5 headlines from the last 24 hours related to the user prompt. Format as follows: [First headline, Second headline, Third headline, Fourth headline, Fifth headline]", prompt])
 
         if "choices" in data and len(data["choices"]) > 0:
             result = {
