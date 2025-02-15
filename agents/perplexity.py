@@ -1,17 +1,23 @@
+from typing import List, Dict
+import requests
 class PerplexityAPI:
     def __init__(self, api_key: str):
         self.api_key = api_key
         self.base_url = "https://api.perplexity.ai"
     
-    def query(self, prompt: str) -> str:
+    def perplexity_query(self, prompts) -> str:
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
         
+        messages = []
+        for prompt in prompts:
+            messages.append({"role": "user", "content": prompt})
+            
         data = {
             "model": "sonar",  # or another available model
-            "messages": [{"role": "user", "content": prompt}]
+            "messages": messages,
         }
         
         response = requests.post(
@@ -21,7 +27,7 @@ class PerplexityAPI:
         )
         
         if response.status_code == 200:
-            return response.json()['choices'][0]['message']['content']
+            return response.json()
         else:
             raise Exception(f"Error from Perplexity API: {response.text}")
     

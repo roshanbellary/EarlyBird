@@ -15,22 +15,20 @@ class PodcastScriptGenerator:
         self.memory = ConversationBufferMemory()
         
         self.expert_prompt = PromptTemplate(
-            input_variables=["story", "host_comment"],
+            input_variables=["input"],
             template="""
             You are an expert commentator. Respond to the host's comments about this story:
-            Story: {story}
-            Host: {host_comment}
+            {input}
             
             Provide insightful analysis and expert perspective.
             """
         )
         
         self.host_prompt = PromptTemplate(
-            input_variables=["story", "expert_comment"],
+            input_variables=["input"],
             template="""
             You are a podcast host. Present this story and respond to the expert's comments:
-            Story: {story}
-            Expert: {expert_comment}
+            {input}
             
             Keep the conversation engaging and natural.
             """
@@ -52,20 +50,18 @@ class PodcastScriptGenerator:
         script = []
         
         # Initial host introduction
-        host_intro = self.host_chain.run(story=story["draft"], expert_comment="")
+        host_intro = self.host_chain.run(input=f"Story: {story['draft']}\nExpert: ")
         script.append(f"HOST: {host_intro}")
         
         # Generate conversation
         for _ in range(3):  # Number of back-and-forth exchanges
             expert_comment = self.expert_chain.run(
-                story=story["draft"],
-                host_comment=host_intro
+                input=f"Story: {story['draft']}\nHost: {host_intro}"
             )
             script.append(f"EXPERT: {expert_comment}")
             
             host_response = self.host_chain.run(
-                story=story["draft"],
-                expert_comment=expert_comment
+                input=f"Story: {story['draft']}\nExpert: {expert_comment}"
             )
             script.append(f"HOST: {host_response}")
             
