@@ -10,13 +10,13 @@ class PodcastScriptGenerator:
         # Initialize LLMs for host and expert with different temperatures
         self.host_llm = ChatOpenAI(
             api_key=openai_api_key,
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             temperature=0.7
         )
         
         self.expert_llm = ChatOpenAI(
             api_key=openai_api_key,
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             temperature=0.4
         )
         
@@ -117,15 +117,15 @@ class PodcastScriptGenerator:
             expert_response = self.expert_chain.run(
                 combined_input=combined_input
             )
-            script_segments.append(f"EXPERT: {expert_response}")
-            chat_history = f"{chat_history}\nEXPERT: {expert_response}"
+            script_segments.append(f"<EXPERT>{expert_response}</EXPERT>")
+            chat_history = f"EXPERT: {expert_response}"
             
             # Host follow-up
             host_response = self.host_chain.run(
                 combined_input=combined_input
             )
-            script_segments.append(f"HOST: {host_response}")
-            chat_history = f"{chat_history}\nHOST: {host_response}"
+            script_segments.append(f"<HOST>{host_response}</HOST>")
+            chat_history = f"HOST: {host_response}"
         
         # Add closing remarks
         closing_prompt = PromptTemplate(
@@ -134,7 +134,7 @@ class PodcastScriptGenerator:
         )
         closing_chain = LLMChain(llm=self.host_llm, prompt=closing_prompt)
         closing = closing_chain.run(combined_input=combined_input)
-        script_segments.append(f"HOST: {closing}")
+        script_segments.append(f"<HOST>{closing}</HOST>")
         
         return "\n\n".join(script_segments)
 

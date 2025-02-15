@@ -9,25 +9,23 @@ import os
 import requests
 
 class InterestClassifierAgent:
-    def __init__(self, openai_api_key: str, prompt):
-        self.llm = ChatOpenAI(api_key=openai_api_key, model="gpt-3.5-turbo")
+    def __init__(self, openai_api_key: str, prompt: PromptTemplate = None):
+        self.llm = ChatOpenAI(api_key=openai_api_key, model="gpt-4o-mini")
         if prompt is None:
             self.prompt = PromptTemplate(
                 input_variables=["user_interests"],
                 template="""
-                Generate a list of 3 topics based on the user's interests below. These topics should be distinct relatively unrelated from eachother:
-                {user_interests}
+                Here is a list of user interests: {user_interests}
+                Generate a list of 3 broad categories based on the user's interests. These categories should be distinct relatively unrelated from each other and heavily relate to the user's categories given:
                 
-                The topics should be outputted as a list of strings.
+                The topics should be outputted as <TOPIC> topic 1 </TOPIC> <TOPIC> topic 2 </TOPIC> <TOPIC> topic 3 </TOPIC>
+                INCLUD THE <TOPIC> TAGS
                 """
             )
         else:
             self.prompt = prompt
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
     
-    def draft_stories(self, researched_stories: List[Dict]) -> List[Dict]:
-        drafted_stories = []
-        for story in researched_stories:
-            draft = self.chain.run(story_data=str(story))
-            drafted_stories.append({**story, "draft": draft})
-        return drafted_stories
+    def interest_classify(self, user_interests: List[str]):
+        user_interests = "\n".join(user_interests)
+        return self.chain.run(user_interests=user_interests)

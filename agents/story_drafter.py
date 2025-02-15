@@ -30,9 +30,8 @@ class StoryDrafterAgent:
             self.prompt = prompt
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
     
-    def draft_stories(self, researched_stories: List[Dict]) -> List[Dict]:
+    def draft_stories(self, researched_stories: str) -> List[Dict]:
         drafted_stories = []
-        for story in researched_stories:
-            draft = self.chain.run(story_data=str(story))
-            drafted_stories.append({**story, "draft": draft})
+        draft = self.chain.run(story_data=researched_stories)
+        drafted_stories.append({"draft": draft})
         return drafted_stories

@@ -9,8 +9,8 @@ import os
 import requests
 
 class HeadlineGeneratorAgent:
-    def __init__(self, openai_api_key: str, prompt: PromptTemplate):
-        self.llm = ChatOpenAI(api_key=openai_api_key, model="gpt-3.5-turbo")
+    def __init__(self, openai_api_key: str, prompt: PromptTemplate = None):
+        self.llm = ChatOpenAI(api_key=openai_api_key, model="gpt-4o-mini")
         if prompt is None:
             self.prompt = PromptTemplate(
                 input_variables=["news_item"],

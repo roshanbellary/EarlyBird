@@ -30,7 +30,7 @@ if test_component == 'interest_classifier':
 
     user_interests = ["politics", "technology", "business"]
     interest_classifier = InterestClassifierAgent(openai_api_key, interest_classifier_prompt)
-    interests = interest_classifier.classify_interests(user_interests)
+    interests = interest_classifier.interest_classify(user_interests)
     print(interests)
 
 # Scraper

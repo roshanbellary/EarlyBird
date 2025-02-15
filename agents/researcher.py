@@ -15,7 +15,6 @@ class DeepResearchAgent:
         self.prompt_template = """
         Conduct deep research on the following news story:
         Headline: {headline}
-        Summary: {summary}
         
         Provide:
         1. Historical context
@@ -26,13 +25,11 @@ class DeepResearchAgent:
         
         Format your response with clear sections.
         """
-    def research_stories(self, headlines: List[Dict]) -> List[Dict]:
+    def research_stories(self, headline: str) -> str:
         researched_stories = []
-        for item in headlines:
-            prompt = self.prompt_template.format(
-                headline=item["headline"],
-                summary=item["summary"]
-            )
-            research = self.perplexity.perplexity_query(prompt)
-            researched_stories.append({**item, "research": research})
+        prompt = self.prompt_template.format(
+            headline=headline
+        )
+        research = self.perplexity.perplexity_query(prompt)
+        researched_stories.append({"headline": headline, "research": research})
         return researched_stories
