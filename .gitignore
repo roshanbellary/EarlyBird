@@ -2,7 +2,11 @@
 venv/
 env/
 ENV/
-
+.venv/
+.python-version
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
 # Python
 __pycache__/
 *.py[cod]
