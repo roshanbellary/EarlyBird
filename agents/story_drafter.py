@@ -9,22 +9,25 @@ import os
 import requests
 
 class StoryDrafterAgent:
-    def __init__(self, openai_api_key: str):
+    def __init__(self, openai_api_key: str, prompt: PromptTemplate = None):
         self.llm = ChatOpenAI(api_key=openai_api_key, model="gpt-3.5-turbo")
-        self.prompt = PromptTemplate(
-            input_variables=["story_data"],
-            template="""
-            Draft a compelling podcast story based on this research:
-            {story_data}
-            
-            Include:
-            1. A hook to grab attention
-            2. Clear narrative structure
-            3. Key points and analysis
-            4. Engaging transitions
-            5. Thought-provoking conclusions
-            """
-        )
+        if prompt is None:
+            self.prompt = PromptTemplate(
+                input_variables=["story_data"],
+                template="""
+                Draft a compelling podcast story based on this research:
+                {story_data}
+                
+                Include:
+                1. A hook to grab attention
+                2. Clear narrative structure
+                3. Key points and analysis
+                4. Engaging transitions
+                5. Thought-provoking conclusions
+                """
+            )
+        else:
+            self.prompt = prompt
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
     
     def draft_stories(self, researched_stories: List[Dict]) -> List[Dict]:
