@@ -33,6 +33,6 @@ class DeepResearchAgent:
                 headline=item["headline"],
                 summary=item["summary"]
             )
-            research = self.perplexity.query(prompt)
+            research = self.perplexity.perplexity_query(prompt)
             researched_stories.append({**item, "research": research})
         return researched_stories

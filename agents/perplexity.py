@@ -10,10 +10,8 @@ class PerplexityAPI:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
-        
-        messages = []
-        for prompt in prompts:
-            messages.append({"role": "user", "content": prompt})
+        final_prompt = '\n'.join(prompts)
+        messages = [{"role": "user", "content": final_prompt}]
             
         data = {
             "model": "sonar",  # or another available model

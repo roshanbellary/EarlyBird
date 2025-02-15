@@ -22,9 +22,9 @@ class HeadlineGeneratorAgent:
         )
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
     
-    def generate_headlines(self, news_items: List[Dict]) -> List[Dict]:
+    def generate_headlines(self, news_items: List[str]) -> List[Dict]:
         headlines = []
         for item in news_items:
-            headline = self.chain.run(news_item=str(item))
-            headlines.append({**item, "headline": headline})
+            headline = self.chain.run(news_item=item)
+            headlines.append({"headline": headline, "summary": item})
         return headlines
