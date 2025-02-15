@@ -1,3 +1,5 @@
+from typing import List, Dict
+import requests
 class PerplexityAPI:
     def __init__(self, api_key: str):
         self.api_key = api_key
