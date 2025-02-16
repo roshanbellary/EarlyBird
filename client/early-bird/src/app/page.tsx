@@ -11,6 +11,7 @@ import {
 import { Loader2 } from "lucide-react"
 import Image from "next/image"
 import { io } from "socket.io-client"
+import { motion, AnimatePresence } from "framer-motion" // Add this import
 
 export default function Home() {
   // Pre-generated podcast file states
@@ -540,13 +541,28 @@ export default function Home() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {
-              alltext.map((text, index) => (
-                <div key={index} className="text-sm text-muted-foreground">
-                  {text}
-                </div>
-              ))
-            }
+            <div className="flex flex-col-reverse gap-3">
+              <AnimatePresence mode="popLayout">
+                {alltext.map((text, index) => (
+                  <motion.div
+                    key={text + index}
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className={`
+                      ${index === alltext.length - 1 
+                        ? "text-base font-medium text-foreground" 
+                        : "text-sm text-muted-foreground"
+                      }
+                      transition-all duration-200
+                    `}
+                  >
+                    {text}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
             {isPlaying && currentFileIndex < 6 && (
               <div className="flex justify-center gap-4">
                 <Button
