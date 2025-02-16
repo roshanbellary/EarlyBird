@@ -10,7 +10,7 @@ import requests
 
 class StoryDrafterAgent:
     def __init__(self, openai_api_key: str, prompt: PromptTemplate = None):
-        self.llm = ChatOpenAI(api_key=openai_api_key, model="gpt-3.5-turbo")
+        self.llm = ChatOpenAI(api_key=openai_api_key, model="gpt-4o-mini")
         if prompt is None:
             self.prompt = PromptTemplate(
                 input_variables=["story_data"],

@@ -8,13 +8,35 @@ from pydub import AudioSegment
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 
+
 class PodcastAudioGenerator:
-    def __init__(self, api_key: str):
-        self.client = ElevenLabs(api_key=api_key)
-        self.speaker_voices = {
-            "host": "9BWtsMINqrJLrRacOk9x",   # Aria
-            "expert": "CwhRBWXzGAHq8TQ4Fs17" # Roger
+    def __init__(self, output_dir=None):
+        self.ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+        if not self.ELEVENLABS_API_KEY:
+            raise ValueError("Please set the ELEVENLABS_API_KEY environment variable.")
+
+        # Map speaker names to voice IDs
+        self.SPEAKER_VOICES = {
+            "host": "9BWtsMINqrJLrRacOk9x",  # Aria
+            "expert": "CwhRBWXzGAHq8TQ4Fs17",  # Roger
         }
+
+        # Initialize the ElevenLabs client
+        self.client = ElevenLabs(api_key=self.ELEVENLABS_API_KEY)
+
+        # Use the provided output directory or default to the audio_files directory
+        if output_dir:
+            self.audio_dir = output_dir
+        else:
+            # Fallback to the default directory
+            self.podcast_dir = os.path.join(
+                self.project_root,
+                "backend",
+                "podcast",
+                "finished_podcasts",
+            )
+
+        os.makedirs(self.audio_dir, exist_ok=True)
 
     def text_to_speech_file(self, text: str, voice_id: str) -> str:
         """Converts text to speech using ElevenLabs with the specified voice, saves to an MP3 file."""
@@ -22,63 +44,72 @@ class PodcastAudioGenerator:
             voice_id=voice_id,
             output_format="mp3_22050_32",
             text=text,
-            model_id="eleven_turbo_v2_5",  # Low latency model
+            #model_id="eleven_multilingual_v2",  # high quality model
+            model_id="eleven_flash_v2_5",  # Low latency model
             voice_settings=VoiceSettings(
-                stability=0.0,
-                similarity_boost=1.0,
+                stability=0.5,
+                similarity_boost=0.5,
                 style=0.0,
                 use_speaker_boost=True,
             ),
         )
-        file_path = f"{uuid.uuid4()}.mp3"
-        with open(file_path, "wb") as f:
+        temp_file_path = os.path.join(self.audio_dir, f"{uuid.uuid4()}.mp3")
+        with open(temp_file_path, "wb") as f:
             for chunk in response:
                 if chunk:
                     f.write(chunk)
-        return file_path
+        return temp_file_path
 
-    def generate_podcast_audio(self, transcript_file: str, output_file: str):
-        """Reads a transcript with XML-like tags, converts to TTS, and merges all clips."""
-        with open(transcript_file, "r", encoding="utf-8") as f:
-            content = f.read()
+    def generate_audio(self, script: str) -> str:
+        """
+        Generates audio from a script with XML-like tags.
+        Returns the path to the generated audio file.
+        """
+        # Create a unique filename for the final podcast
+        timestamp = uuid.uuid4()
+        output_file = os.path.join(self.audio_dir, f"podcast_audio.mp3")
 
         # Split by tags and process each section
         clips = []
-        parts = re.findall(r'<(HOST|EXPERT)>\s*(.*?)\s*</\1>', content, re.DOTALL)
-        
-        for speaker, text in parts:
-            speaker = speaker.lower()
-            # Get the voice ID for the speaker, or default to host if missing
-            voice_id = self.speaker_voices.get(speaker, self.speaker_voices["host"])
-            print(f"Converting for {speaker}: {text}")
-            mp3_path = self.text_to_speech_file(text, voice_id)
-            clips.append(mp3_path)
+        parts = re.findall(r"<(HOST|EXPERT)>\s*(.*?)\s*</\1>", script, re.DOTALL)
 
-        # Combine all clips into one final MP3
-        if not clips:
-            print("No audio clips created.")
-            return
+        if not parts:
+            raise ValueError("No valid script sections found")
 
-        final_audio = AudioSegment.empty()
-        for clip in clips:
-            final_audio += AudioSegment.from_mp3(clip)
-            os.remove(clip)  # Clean up temporary files
+        try:
+            for speaker, text in parts:
+                speaker = speaker.lower()
+                # Get the voice ID for the speaker, or default to host if missing
+                voice_id = self.SPEAKER_VOICES.get(speaker, self.SPEAKER_VOICES["host"])
+                print(
+                    f"Converting for {speaker}: {text[:100]}..."
+                )  # Print first 100 chars
+                mp3_path = self.text_to_speech_file(text, voice_id)
+                clips.append(mp3_path)
 
-        final_audio.export(output_file, format="mp3")
-        print(f"Merged podcast saved to {output_file}")
+            # Combine all clips into one final MP3
+            final_audio = AudioSegment.empty()
+            for clip in clips:
+                final_audio += AudioSegment.from_mp3(clip)
+                os.remove(clip)  # Clean up temporary files
+
+            final_audio.export(output_file, format="mp3")
+            print(f"Merged podcast saved to {output_file}")
+            return output_file
+
+        except Exception as e:
+            # Clean up any temporary files in case of error
+            for clip in clips:
+                if os.path.exists(clip):
+                    os.remove(clip)
+            raise e
+
 
 if __name__ == "__main__":
-    ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_KEY")
-    if not ELEVENLABS_API_KEY:
-        print("Please set the ELEVENLABS_API_KEY environment variable.")
-        sys.exit(1)
-
-    if len(sys.argv) < 3:
-        print("Usage: python audio_generation.py <transcript_file> <output_file>")
-        sys.exit(1)
-
-    transcript_path = sys.argv[1]
-    output_path = sys.argv[2]
-
-    generator = PodcastAudioGenerator(api_key=ELEVENLABS_API_KEY)
-    generator.generate_podcast_audio(transcript_path, output_path)
+    # Example usage
+    generator = PodcastAudioGenerator()
+    script = """
+    <HOST>Welcome to our podcast!</HOST>
+    <EXPERT>Thank you for having me.</EXPERT>
+    """
+    generator.generate_audio(script)

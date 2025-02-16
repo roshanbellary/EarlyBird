@@ -46,9 +46,9 @@ class PodcastScriptGenerator:
             4. Draw out interesting insights from the expert
             5. Use conversational language while staying professional
             
-            Respond in a way that moves the discussion forward naturally. ONLY INCLUDE YOUR RESPONSE
-            DO NOT INCLUDE ANY PREVOUS CONTEXT. DO NOT REENACT THE EXPERT. YOU ARE THE HOST AND ONLY THE HOST.
-            KEEP YOUR RESPONSE TO TWO OR THREE LINES. THIS IS YOUR ONE AND ONLY SHOT IF YOU GET THIS WRONG I WILL CUT OFF MY ARM.
+            Respond in a way that moves the discussion forward naturally. Refer to the expert as 'Dr. Bellary'.
+            ONLY INCLUDE YOUR RESPONSE. DO NOT INCLUDE ANY PREVOUS CONTEXT. DO NOT REENACT THE EXPERT. YOU ARE THE HOST AND ONLY THE HOST.
+            KEEP YOUR RESPONSE TO TWO OR THREE LINES. DO NOT NAME THE PODCAST. THIS IS YOUR ONE AND ONLY SHOT IF YOU GET THIS WRONG I WILL CUT OFF MY ARM.
             """
         )
         
@@ -56,7 +56,7 @@ class PodcastScriptGenerator:
         self.expert_prompt = PromptTemplate(
             input_variables=["combined_input", "chat_history"],
             template="""
-            You are a knowledgeable expert panelist named Emily on a podcast discussing a story.
+            You are a knowledgeable expert panelist named Dr. Bellary on a podcast discussing a story.
             
             {combined_input}
             
@@ -82,14 +82,14 @@ class PodcastScriptGenerator:
             llm=self.host_llm,
             prompt=self.host_prompt,
             memory=self.memory,
-            verbose=True
+            verbose=False
         )
         
         self.expert_chain = LLMChain(
             llm=self.expert_llm,
             prompt=self.expert_prompt,
             memory=self.memory,
-            verbose=True
+            verbose=False
         )
 
     def generate_response(self, chain, combined_input: str) -> str:
@@ -102,37 +102,52 @@ class PodcastScriptGenerator:
 
     def generate_script(self, content: List[Dict]) -> str:
         script_segments = []
-        print("content:", content)
+        print("content:", len(content))
 
         for i in range(len(content)):
-            combined_input = f"Story Content: {content[i]['story']}\n"
-            
-            # Ensure smooth transitions between topics
-            if i > 0:
-                transition_text = f"""
-                Previously, we discussed {content[i-1]['topic']}. Now, let's transition to our next topic: {content[i]['topic']}.
-                """
-                combined_input = transition_text + "\n" + combined_input
-
-            # Host's introduction to the new topic
-            host_intro = self.generate_response(self.host_chain, combined_input)
-            script_segments.append(f"<HOST>{host_intro}</HOST>")
-
-            # Expert's response to the host
-            expert_response = self.generate_response(self.expert_chain, combined_input)
-            script_segments.append(f"<EXPERT>{expert_response}</EXPERT>")
-
-            # Add a wrap-up statement at the end
-            if i == len(content) - 1:
-                closing_prompt = PromptTemplate(
-                    input_variables=["combined_input"],
-                    template="""
-                    Provide a closing statement to wrap up the podcast, thanking the expert and audience.
+            for j in range(2):     
+                print(content[i]['topic'], j)           
+                # Ensure smooth transitions between topics
+                if j == 0:
+                    if i == 0:
+                        combined_input = f"""
+                            Give a brief and comforting introduction to the podcast and introduce the attached story: {content[i]['story']}
+                        """
+                    else:
+                        combined_input = f"""
+                            Now, briefly transition from the previous story to the attached story in the form 'now transitioning to a new story': {content[i]['story']}
+                        """
+                else:
+                    combined_input = f"""
+                        {content[i]['story']}
                     """
-                )
-                closing_chain = LLMChain(llm=self.host_llm, prompt=closing_prompt)
-                closing = self.generate_response(closing_chain, combined_input)
-                script_segments.append(f"<HOST>{closing}</HOST>")
+                print(combined_input)
+
+                # if i > 0:
+                #     transition_text = f"""
+                #     Previously, we discussed {content[i-1]['topic']}. Now, let's transition to our next topic: {content[i]['topic']}.
+                #     """
+                #     combined_input = transition_text + "\n" + combined_input
+
+                # Host's introduction to the new topic
+                host_intro = self.generate_response(self.host_chain, combined_input)
+                script_segments.append(f"<HOST>{host_intro}</HOST>")
+
+                # Expert's response to the host
+                expert_response = self.generate_response(self.expert_chain, content[i]['story'])
+                script_segments.append(f"<EXPERT>{expert_response}</EXPERT>")
+
+                # Add a wrap-up statement at the end
+                if i == len(content) - 1 and j == 1:
+                    closing_prompt = PromptTemplate(
+                        input_variables=["combined_input"],
+                        template="""
+                        Provide a brief 1 sentence closing statement to wrap up the podcast, thanking the expert and audience.
+                        """
+                    )
+                    closing_chain = LLMChain(llm=self.host_llm, prompt=closing_prompt)
+                    closing = self.generate_response(closing_chain, combined_input)
+                    script_segments.append(f"<HOST>{closing}</HOST>")
 
         return "\n\n".join(script_segments)
 

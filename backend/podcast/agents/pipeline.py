@@ -76,5 +76,7 @@ if __name__ == "__main__":
     print(os.getenv("OPENAI_API_KEY"))
     pipeline = NewsPodcastPipeline(
         perplexity_api_key=os.getenv("PERPLEXITY_API_KEY"),
-        openai_api_key=os.getenv("OPENAI_API_KEY"), mistral_api_key=os.getenv("MISTRAL_API_KEY"))
+        openai_api_key=os.getenv("OPENAI_API_KEY"),
+        mistral_api_key=os.getenv("MISTRAL_API_KEY")
+    )
     pipeline.generate_podcast()
