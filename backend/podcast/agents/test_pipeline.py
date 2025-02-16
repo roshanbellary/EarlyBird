@@ -13,13 +13,8 @@ load_dotenv()
 
 perplexity_api_key=os.getenv("PERPLEXITY_API_KEY")
 openai_api_key=os.getenv("OPENAI_API_KEY")
-<<<<<<< HEAD
 
 test_component = 'story_drafter'
-=======
-mistral_api_key=os.getenv("MISTRAL_API_KEY")
-test_component = 'script_generator'
->>>>>>> 34de9a86a215a0859216fa611cbf66dcc2628582
 
 # Interest Classifier
 if test_component == 'interest_classifier':
