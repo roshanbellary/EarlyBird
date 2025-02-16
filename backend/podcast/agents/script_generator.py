@@ -41,15 +41,14 @@ class PodcastScriptGenerator:
             Previous Discussion: {chat_history}
             
             Your role is to:
-            1. If responding to the expert, ask follow-up questions
+            1. Respond to the expert in a few words and ask follow up questions regarding the information in the story to continue the conversation
             2. Keep the conversation natural and flowing
-            3. Draw out interesting insights from the expert
-            4. Use conversational language while staying professional
-            5. Remember that you are a host and speaking to an audience as well as the expert
+            3. Use conversational language while staying professional
+            4. Remember that you are a host and speaking to an audience as well as the expert
             
-            Respond in a way that moves the discussion forward naturally. Refer to the expert as Dr. Bellary.
-            ONLY INCLUDE YOUR RESPONSE. DO NOT PUT 'Host: ' AT THE BEGINNING OF THE LINE. DO NOT INCLUDE ANY PREVOUS CONTEXT. DO NOT REENACT THE EXPERT. YOU ARE THE HOST AND ONLY THE HOST.
-            KEEP YOUR RESPONSE TO TWO OR THREE LINES. DO NOT NAME THE PODCAST. THIS IS YOUR ONE AND ONLY SHOT IF YOU GET THIS WRONG I WILL CUT OFF MY ARM.
+            Respond in a way that moves the discussion forward naturally.
+            ONLY INCLUDE YOUR RESPONSE. YOU MUST LIMIT RESPONSES TO 1-2 SENTENCES. DO NOT PUT 'Host: ' AT THE BEGINNING OF THE LINE. DO NOT INCLUDE ANY PREVOUS CONTEXT. DO NOT REENACT THE EXPERT. YOU ARE THE HOST AND ONLY THE HOST.
+            DO NOT NAME THE PODCAST. DO NOT REFER TO THE EXPERT AS 'EXPERT' OR 'DR. BELLARY'. THIS IS YOUR ONE AND ONLY SHOT IF YOU BREAK ONE OF THESE RULES I WILL CUT OFF MY ARM.
             """,
         )
 
@@ -64,7 +63,7 @@ class PodcastScriptGenerator:
             Previous Discussion: {chat_history}
             
             Your role is to:
-            1. Provide deep, insightful analysis of the story
+            1. Provide deep, insightful, concise analysis of the story
             2. Draw from relevant expertise and experience
             3. Respond directly to the host's questions
             4. Add new perspectives and angles to the discussion
@@ -72,10 +71,10 @@ class PodcastScriptGenerator:
             6. Include very specific examples and facts from the story.
             
             Respond to the host's latest point or question while advancing the discussion.
-            ONLY INCLUDE YOUR RESPONSE DO NOT REPEAT ANY CONTEXT GIVEN
+            ONLY INCLUDE YOUR RESPONSE DO NOT REPEAT ANY CONTEXT GIVEN. YOU MUST LIMIT RESPONSES TO 1-2 SENTENCES.
             DO NOT REENACT THE HOST. DO NOT PUT 'Dr. Bellary' AT BEGINNING OF THE LINE. YOU ARE THE EXPERT AND ONLY THE EXPERT.
             KEEP YOUR RESPONSE TO TWO OR THREE LINES. THIS IS YOUR ONE AND ONLY SHOT 
-            IF YOU GET THIS WRONG I WILL CUT OFF MY ARM.
+            IF YOU DO BREAK ONE OF THESE RULES I WILL CUT OFF MY ARM.
             """,
         )
 
@@ -104,44 +103,49 @@ class PodcastScriptGenerator:
 
     def generate_script(self, content: List[Dict]) -> str:
         script_segments = []
+        print(content)
+        story_text = content[-1]["story"][0]['draft']
 
-        for i in range(len(content)):
-            # Extract the story content from the nested structure
-            story_text = content[i]["story"][0]["draft"]
-
-            for j in range(2):
-                if j == 0:
-                    if i == 0:
-                        combined_input = f"""
-                            Give a brief and comforting introduction to the podcast and introduce the attached story: {story_text}
-                        """
-                    else:
-                        combined_input = f"""
-                            Now, briefly transition from the previous story to the attached story: {story_text}
-                        """
+        for j in range(2):
+            if j == 0:
+                if len(content) == 1:
+                    combined_input = f"""
+                        Give a brief 1 sentence introduction to the podcast welcoming the host and the audience. 
+                        Then, introduce the attached story. YOU MUST FOLLOW THIS INTRODUCTION FORMAT.
+                        Here is the story: {story_text}
+                    """
                 else:
-                    combined_input = story_text
+                    combined_input = f"""
+                        Now, give a 1 sentence transition to the new story in the form 'thank you for your input. now moving on to a new topic I would love to hear your opinion on the new story'. 
+                        Ensure the transition is very vague because you do not have context on the previous story. YOU MUST FOLLOW THIS TRANSITION FORMAT.
+                        Here is the story: {story_text}
+                    """
+            else:
+                combined_input = f"""
+                    Here is the story: {story_text}
+                """
 
-                print(combined_input)
+            # print(combined_input)
 
-                # Host's introduction/response
-                host_intro = self.generate_response(self.host_chain, combined_input)
-                script_segments.append(f"<HOST>{host_intro}</HOST>")
+            # Host's introduction/response
+            host_intro = self.generate_response(self.host_chain, combined_input)
+            script_segments.append(f"<HOST>{host_intro}</HOST>")
 
-                # Expert's response using the story text
-                expert_response = self.generate_response(self.expert_chain, story_text)
-                script_segments.append(f"<EXPERT>{expert_response}</EXPERT>")
+            # Expert's response using the story text
+            expert_response = self.generate_response(self.expert_chain, story_text)
+            script_segments.append(f"<EXPERT>{expert_response}</EXPERT>")
 
-        # Add final closing statement
-        if len(content) > 0:
-            closing_prompt = PromptTemplate(
-                input_variables=["combined_input"],
-                template="""
-                        Provide a brief 1 sentence closing statement to wrap up the podcast, thanking the expert and audience.
-                        """,
-            )
-            closing_chain = LLMChain(llm=self.host_llm, prompt=closing_prompt)
-            closing = self.generate_response(closing_chain, combined_input)
-            script_segments.append(f"<HOST>{closing}</HOST>")
+        if len(content) == 3:
+            # Add final closing statement
+            if len(content) > 0:
+                closing_prompt = PromptTemplate(
+                    input_variables=["combined_input"],
+                    template="""
+                            Provide a brief 1 sentence closing statement to wrap up the podcast, thanking the expert and audience.
+                            """,
+                )
+                closing_chain = LLMChain(llm=self.host_llm, prompt=closing_prompt)
+                closing = self.generate_response(closing_chain, combined_input)
+                script_segments.append(f"<HOST>{closing}</HOST>")
 
         return "\n\n".join(script_segments)
