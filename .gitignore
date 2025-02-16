@@ -58,7 +58,9 @@ ios/Pods/
 ios/build/
 
 # pulkith shit
-direct
+direct/retrieval/db/content[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]*.json
+direct/retrieval/db/content[0-9]-[0-9][0-9][0-9][0-9]*.json
+direct/retrieval/db/vector.json
 
 #ignore the pocasts
 backend/podcast/finished_podcasts/

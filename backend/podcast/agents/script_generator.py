@@ -109,6 +109,11 @@ class PodcastScriptGenerator:
             # Extract the story content from the nested structure
             story_text = content[i]["story"][0]["draft"]
 
+            # print index and story text
+            print(f"Story {i}:")
+            print(story_text)
+            print("\n")
+
             for j in range(2):
                 if j == 0:
                     if i == 0:
