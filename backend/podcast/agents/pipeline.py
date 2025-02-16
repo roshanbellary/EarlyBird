@@ -66,6 +66,10 @@ class NewsPodcastPipeline:
             print(f"Drafting story for {topic}...")
             drafted_stories = self.drafter.draft_stories(researched_stories)
             stories.append({"story": drafted_stories, "topic": topic})
+        
+        # print the stories
+        print("Stories:", stories)
+        
         script = self.script_generator.generate_script(stories)
         return script
         # print("Generated Podcast Scripts:", result)
