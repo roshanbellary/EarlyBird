@@ -16,7 +16,8 @@ import re
 import json
 from dotenv import load_dotenv
 
-from ml.inference.rl_bandit import HybridLinUCBModel
+from backend.podcast.ml.inference.rl_bandit import HybridLinUCBModel
+from backend.podcast.ml.retrieval.merger import Article, Merger
 # project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # sys.path.insert(0, project_root)
 
@@ -40,7 +41,9 @@ class NewsPodcastPipeline:
         self.researcher = DeepResearchAgent(perplexity_api_key)
         self.drafter = StoryDrafterAgent(openai_api_key)
         self.stories = []
-        self.rl_agent = HybridLinUCBModel(articles=[], alpha=1.0, learning_rate=1.0, stabilization=0.001, feedback_exponent=2.0)
+
+        self.articles: list[Article] = Merger(db_path = "backend/podcast/ml/retrieval/db/").merge()
+        self.rl_agent = HybridLinUCBModel(articles=self.articles, alpha=1.0, learning_rate=1.0, stabilization=0.001, feedback_exponent=2.0)
 
     def parse_topic_classifier(self, response: str) -> List[str]:
         topics = re.findall(r"<TOPIC>(.*?)</TOPIC>", response, re.DOTALL)
@@ -61,37 +64,38 @@ class NewsPodcastPipeline:
         return result
     def generate_podcast(self) -> str:
         # Execute the pipeline
-        print("Scraping news...")
-        categories = ["Urban Planning", "Beekeeping", "Astrobiology", "Minimalist Living", "Cryptography", "Sumo Wrestling", "Mushroom Foraging", "Antique Restoration"]
-        topic_classifier  = self.interest_classifier.interest_classify(categories)
-        topics = self.parse_topic_classifier(topic_classifier)
-        topics = topics[0:min(len(topics), 3)]
-        print("Generated Topics:", topics)
+        # print("Scraping news...")
+        # categories = ["Urban Planning", "Beekeeping", "Astrobiology", "Minimalist Living", "Cryptography", "Sumo Wrestling", "Mushroom Foraging", "Antique Restoration"]
+        # topic_classifier  = self.interest_classifier.interest_classify(categories)
+        # topics = self.parse_topic_classifier(topic_classifier)
+        # topics = topics[0:min(len(topics), 3)]
         script = ''
-        for topic in topics:
-            news_item = self.scraper.get_top_headlines(topic)
-            print("Generated News Item:", news_item)
-            news_item = self.parse_scraper_response(news_item['content'])
+        # news_item = self.scraper.get_top_headlines(topic)
+        # print("Generated News Item:", news_item)
+        # news_item = self.parse_scraper_response(news_item['content'])
 
+        print("Generating news articles...")
+        news_articles: list[Article] = self.rl_agent.return_next_articles(num_articles=5)
+        
+        for news_item in news_articles:
             print("Conducting deep research...")
-            researched_stories = self.researcher.research_stories(news_item)
-            print("Generated Research:", researched_stories)
+            researched_stories = self.researcher.research_stories(news_item.title, news_item.abstract)
+            print("Generated Research:")
+            research_content = researched_stories[0]["research"]["choices"][0]["message"]["content"]
+            # print(f"Drafting story for {news_item.section}...")
+            # drafted_stories = self.drafter.draft_stories(researched_stories)
+            # self.stories.append({"story": drafted_stories, "topic": news_item.section})
+            # print("Stories:", self.stories)
 
-            print(f"Drafting story for {topic}...")
-            drafted_stories = self.drafter.draft_stories(researched_stories)
-            self.stories.append({"story": drafted_stories, "topic": topic})
-            print("Stories:", self.stories)
-
-            print(f"Generating script for {topic}...")
+            print(f"Generating script for {news_item.title}...")
 
             mistral_api_key=os.getenv("MISTRAL_API_KEY")
             self.script_generator = PodcastScriptGenerator(mistral_api_key)
-            story = self.script_generator.generate_script(self.stories)     
+            story = self.script_generator.generate_script(news_item, research_content)     
             script += story   
-            print('\n' + script)
 
-        print(script)
-        
+            print(story)
+            
         return script
         # print("Generated Podcast Scripts:", result)
         # return result
