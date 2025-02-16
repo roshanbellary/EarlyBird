@@ -24,7 +24,7 @@ class PodcastScriptGenerator:
         
         # Use window memory to limit context size
         self.memory = ConversationBufferWindowMemory(
-            k=2,  # Only keep last 2 exchanges
+            k=4,  # Only keep last 2 exchanges
             input_key="combined_input",
             memory_key="chat_history"
         )
@@ -103,25 +103,36 @@ class PodcastScriptGenerator:
     def generate_script(self, content: List[Dict]) -> str:
         script_segments = []
         print("content:", content)
+
         for i in range(len(content)):
-            combined_input = f"Story Content: {content[i]["story"]}\n"
-            host_input = combined_input
-            if i > 0:
-                print("previous topic: ", content[i-1]["topic"])
-                host_input = f"The previous topic was {content[i-1]["topic"]} please transition within your response from this topic to this new topic described as follows\n {combined_input}"
-            host_intro = self.generate_response(self.host_chain, host_input)
-            script_segments.append(f"<HOST>{host_intro}</HOST>")
+            combined_input = f"Story Content: {content[i]['story']}\n"
             
+            # Ensure smooth transitions between topics
+            if i > 0:
+                transition_text = f"""
+                Previously, we discussed {content[i-1]['topic']}. Now, let's transition to our next topic: {content[i]['topic']}.
+                """
+                combined_input = transition_text + "\n" + combined_input
+
+            # Host's introduction to the new topic
+            host_intro = self.generate_response(self.host_chain, combined_input)
+            script_segments.append(f"<HOST>{host_intro}</HOST>")
+
+            # Expert's response to the host
             expert_response = self.generate_response(self.expert_chain, combined_input)
             script_segments.append(f"<EXPERT>{expert_response}</EXPERT>")
-            
+
+            # Add a wrap-up statement at the end
             if i == len(content) - 1:
                 closing_prompt = PromptTemplate(
                     input_variables=["combined_input"],
-                    template="Provide a closing statement to wrap up the podcast, thanking the expert and audience."
+                    template="""
+                    Provide a closing statement to wrap up the podcast, thanking the expert and audience.
+                    """
                 )
                 closing_chain = LLMChain(llm=self.host_llm, prompt=closing_prompt)
                 closing = self.generate_response(closing_chain, combined_input)
                 script_segments.append(f"<HOST>{closing}</HOST>")
-        
+
         return "\n\n".join(script_segments)
+
