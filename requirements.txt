@@ -37,7 +37,6 @@ mistralai==1.5.0
 msgpack==1.1.0
 multidict==6.1.0
 mypy-extensions==1.0.0
-numpy==2.2.3
 openai==1.63.0
 orjson==3.10.15
 packaging==24.2
