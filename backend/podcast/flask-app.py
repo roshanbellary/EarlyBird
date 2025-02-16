@@ -1,7 +1,7 @@
 from flask import Flask, request, send_from_directory, jsonify
 import os
 import logging
-from podcast.podcast import PodcastRunner
+from podcast import PodcastRunner
 from typing import Dict, Any
 
 # Configure logging

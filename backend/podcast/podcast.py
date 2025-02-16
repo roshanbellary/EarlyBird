@@ -2,8 +2,8 @@ import os
 import uuid
 from datetime import datetime
 from dotenv import load_dotenv
-from .agents.audio.audio_generation import PodcastAudioGenerator
-from .agents.pipeline import NewsPodcastPipeline
+from agents.audio.audio_generation import PodcastAudioGenerator
+from agents.pipeline import NewsPodcastPipeline
 
 load_dotenv()  # Load environment variables from .env file
 
