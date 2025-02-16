@@ -66,7 +66,7 @@ def generate():
     try:
         if audio_path:  # Ensure audio_path is not None
             filename = os.path.basename(audio_path)
-            return jsonify({"file_url": f"/download/{filename}", "podcast_dir": podcast_dir, "transcript_path": transcript_path})
+            return jsonify({"file_url": f"{filename}", "podcast_dir": podcast_dir, "transcript_path": transcript_path})
         else:
             logger.error("Audio path is not set.")
             return jsonify({"error": "Internal server error"}), 500
@@ -76,7 +76,7 @@ def generate():
 
 
 @app.route("/download/<filename>", methods=["GET"])
-def download(filename):
+def download(filename, num = 1):
     """Serves the generated MP3 file from the podcast directory."""
     try:
         # Using configured podcast directory
@@ -96,7 +96,7 @@ def download(filename):
             return jsonify({"error": "No podcast directories found"}), 404
 
         # Build the full path to the MP3 file
-        podcast_audio_path = os.path.join(podcast_dir, latest_podcast_dir, f"podcast_audio.mp3")
+        podcast_audio_path = os.path.join(podcast_dir, latest_podcast_dir, f"interaction_{num}.mp3")
         logger.info(f"Podcast audio path: {podcast_audio_path}")
         if not os.path.exists(podcast_audio_path):
             logger.error(f"Audio file not found: {podcast_audio_path}")

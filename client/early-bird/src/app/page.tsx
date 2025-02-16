@@ -1,6 +1,7 @@
 "use client"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import {useState, useEffect} from "react"
 import Image from "next/image"
 
 async function generatePodcasts() {
@@ -13,10 +14,26 @@ async function generatePodcasts() {
 }
 
 export default function Home() {
+  const [id, setId] = useState<string | null>(null);
+  const [generated, setGenerated] = useState(false);
   async function generatePodcast(event: React.FormEvent) {
-    event.preventDefault(); // Fix: Added event parameter
-    const podcast = await generatePodcasts(); // This won't work in a client component due to "use server"
-    console.log(podcast);
+    event.preventDefault();
+    try {
+      const response = await fetch('http://localhost:8000/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const podcast = await response.json();
+      setGenerated(true);
+      console.log(podcast);
+    } catch (error) {
+      console.error('Error generating podcast:', error);
+    }
   }
 
   return (
