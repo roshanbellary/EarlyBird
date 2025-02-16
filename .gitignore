@@ -57,7 +57,11 @@ android/app/build/
 ios/Pods/
 ios/build/
 
+<<<<<<< Updated upstream
 # pulkith shit
 direct
 
+=======
+direct/retrieval/
+>>>>>>> Stashed changes
 

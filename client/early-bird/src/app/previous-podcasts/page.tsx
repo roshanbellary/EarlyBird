@@ -1,15 +1,15 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 
 const previousPodcasts = [
-  { id: 1, title: "Yesterday's Tech Roundup", description: "A summary of yesterday's tech news", date: "2025-02-14" },
-  { id: 2, title: "AI Breakthroughs", description: "Discussing recent advancements in AI", date: "2025-02-13" },
-  { id: 3, title: "Web Dev Trends", description: "Exploring current trends in web development", date: "2025-02-12" },
+  { id: 1, title: "Yesterday's EarlyBird Tech", description: "Your morning dose of tech news", date: "2025-02-14" },
+  { id: 2, title: "Morning AI Insights", description: "Wake up to AI breakthroughs", date: "2025-02-13" },
+  { id: 3, title: "Dawn of Web Dev", description: "Early morning web development trends", date: "2025-02-12" },
 ]
 
 export default function PreviousPodcasts() {
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Previous Podcasts</h1>
+      <h1 className="text-3xl font-bold">Previous EarlyBird Episodes</h1>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {previousPodcasts.map((podcast) => (
           <Card key={podcast.id}>
