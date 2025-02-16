@@ -26,7 +26,6 @@ class NewsPodcastPipeline:
         self.interest_classifier = InterestClassifierAgent(openai_api_key)
         self.researcher = DeepResearchAgent(perplexity_api_key)
         self.drafter = StoryDrafterAgent(openai_api_key)
-        self.script_generator = PodcastScriptGenerator(mistral_api_key)
     def parse_topic_classifier(self, response: str) -> List[str]:
         topics = re.findall(r"<TOPIC>(.*?)</TOPIC>", response, re.DOTALL)
         return topics
@@ -47,12 +46,13 @@ class NewsPodcastPipeline:
     def generate_podcast(self) -> str:
         # Execute the pipeline
         print("Scraping news...")
-        categories = ["politics", "technology", "business"]
+        categories = ["Urban Planning", "Beekeeping", "Astrobiology", "Minimalist Living", "Cryptography", "Sumo Wrestling", "Mushroom Foraging", "Antique Restoration"]
         topic_classifier  = self.interest_classifier.interest_classify(categories)
         topics = self.parse_topic_classifier(topic_classifier)
         topics = topics[0:min(len(topics), 3)]
         print("Generated Topics:", topics)
         stories = []
+        script = ''
         for topic in topics:
             news_item = self.scraper.get_top_headlines(topic)
             print("Generated News Item:", news_item)
@@ -65,13 +65,18 @@ class NewsPodcastPipeline:
             print(f"Drafting story for {topic}...")
             drafted_stories = self.drafter.draft_stories(researched_stories)
             stories.append({"story": drafted_stories, "topic": topic})
-        
-        # print the stories
-        print("Stories:", stories)
-        
-        script = self.script_generator.generate_script(stories)
+            print("Stories:", stories)
+
+            print(f"Generating script for {topic}...")
+
+            mistral_api_key=os.getenv("MISTRAL_API_KEY")
+            self.script_generator = PodcastScriptGenerator(mistral_api_key)
+            story = self.script_generator.generate_script(stories)     
+            script += story   
+            print('\n' + script)
+
         print(script)
-        print(script)
+        
         return script
         # print("Generated Podcast Scripts:", result)
         # return result
