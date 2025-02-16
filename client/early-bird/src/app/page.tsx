@@ -71,6 +71,8 @@ export default function Home() {
     allDoneRef.current = allDone
   }, [allDone])
 
+  const [alltext, setAlltext] = useState([])
+
   // --- SOCKET CONNECTION ---
   useEffect(() => {
     const socket = io("http://localhost:8000")
@@ -114,6 +116,7 @@ export default function Home() {
    * If an interrupt is active (checked via isInterruptingRef), the promise immediately resolves false.
    */
   const playAudioAndWait = async (text: string, voice: string) => {
+    setAlltext((prev) => [...prev, text])
     return new Promise(async (resolve) => {
       if (isInterruptingRef.current) {
         return resolve(false)
@@ -516,7 +519,7 @@ export default function Home() {
       </div>
 
       <form onSubmit={generatePodcast} className="text-center">
-        <Button type="submit" size="lg" disabled={loading}>
+        {!dataJson && <Button type="submit" size="lg" disabled={loading}>
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -525,7 +528,7 @@ export default function Home() {
           ) : (
             "Generate Today's Podcast"
           )}
-        </Button>
+        </Button>}
       </form>
 
       {files.length > 0 && (
@@ -533,18 +536,17 @@ export default function Home() {
           <CardHeader>
             <CardTitle>Your Morning Tech Podcast</CardTitle>
             <CardDescription>
-              {isPlaying
-                ? `Playing part ${currentFileIndex + 1} of ${files.length}`
-                : "Ready to play"}
+              Article {indexPlaying + 1} of {5}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <audio
-              ref={audioRef}
-              onEnded={handleAudioEnd}
-              controls
-              className="w-full"
-            />
+            {
+              alltext.map((text, index) => (
+                <div key={index} className="text-sm text-muted-foreground">
+                  {text}
+                </div>
+              ))
+            }
             {isPlaying && currentFileIndex < 6 && (
               <div className="flex justify-center gap-4">
                 <Button
