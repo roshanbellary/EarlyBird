@@ -25,7 +25,7 @@ class DeepResearchAgent:
         
         Format your response with clear sections.
         """
-    def research_stories(self, headline: str) -> str:
+    def research_stories(self, headline: str) -> List[Dict]:
         researched_stories = []
         prompt = self.prompt_template.format(
             headline=headline

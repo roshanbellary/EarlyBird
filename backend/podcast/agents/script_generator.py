@@ -1,5 +1,5 @@
 from langchain_community.chat_models import ChatOpenAI
-from langchain_mistralai import ChatMistralAI
+from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferWindowMemory
@@ -10,18 +10,18 @@ import time
 class PodcastScriptGenerator:
     def __init__(self, mistral_api_key: str):
         # Initialize LLMs for host and expert with different temperatures
-        self.host_llm = ChatMistralAI(
-            api_key=mistral_api_key,
-            model="mixtral-8x7b-instruct",
-            temperature=0.7
-        )
-        
-        self.expert_llm = ChatMistralAI(
-            api_key=mistral_api_key,
-            model="mixtral-8x7b-instruct",
-            temperature=0.4
+        self.host_llm = ChatOpenAI(
+            model_name="mistral-tiny",
+            openai_api_base="https://api.mistral.ai/v1",
+            openai_api_key=mistral_api_key
         )
 
+        self.expert_llm = ChatOpenAI(
+            model_name="mistral-tiny",
+            openai_api_base="https://api.mistral.ai/v1",
+            openai_api_key=mistral_api_key
+        )
+        
         # Use window memory to limit context size
         self.memory = ConversationBufferWindowMemory(
             k=2,  # Only keep last 2 exchanges
@@ -99,74 +99,43 @@ class PodcastScriptGenerator:
         time.sleep(1)
         return chain.run(combined_input=combined_input)
 
-    def generate_script(self, content: str, num_exchanges: int = 3) -> str:
+    def generate_script(self, content: List[Dict]) -> str:
         """
         Generate a podcast script with natural back-and-forth between host and expert.
         
         Args:
-            content (str): The story content to be discussed
-            num_exchanges (int): Number of back-and-forth exchanges (default: 4)
+            content (List[str]): The list of story content topics to be discussed.
+            num_exchanges (int): Number of back-and-forth exchanges (default: 3).
             
         Returns:
-            str: The generated podcast script
+            str: The generated podcast script.
         """
         script_segments = []
-        combined_input = f"Story Content: {content}\n"
         
-        # Initial host introduction and question
-        host_intro = self.generate_response(self.host_chain, combined_input)
-        script_segments.append(f"HOST: {host_intro}")
-        
-        # Generate conversation back-and-forth
-        for _ in range(num_exchanges):
-            # Expert response
-            expert_response = self.generate_response(self.expert_chain, combined_input)
-            script_segments.append(f"<EXPERT>{expert_response}</EXPERT>")
+        for i in range(len(content)):
+            combined_input = f"Story Content: {content[i]["story"]}\n"
             
-            # Host follow-up
-            host_response = self.generate_response(self.host_chain, combined_input)
-            script_segments.append(f"<HOST>{host_response}</HOST>")
-        
-        # Add closing remarks with simplified prompt
-        closing_prompt = PromptTemplate(
-            input_variables=["combined_input"],
-            template="Provide a brief, one-sentence closing statement for the discussion, thanking the expert."
-        )
-        closing_chain = LLMChain(llm=self.host_llm, prompt=closing_prompt)
-        closing = self.generate_response(closing_chain, combined_input)
-        script_segments.append(f"<HOST>{closing}</HOST>")
+            host_intro = self.generate_response(self.host_chain, combined_input)
+            script_segments.append(f"HOST: {host_intro}")
+            
+            expert_response = self.generate_response(self.expert_chain, combined_input)
+            script_segments.append(f"EXPERT: {expert_response}")
+            
+            if i < len(content) - 1:
+                transition_prompt = PromptTemplate(
+                    input_variables=["combined_input"],
+                    template=f"Provide a brief, natural transition statement to close this discussion and introduce the next topic: {content[i+1]["topic"]}"
+                )
+                transition_chain = LLMChain(llm=self.host_llm, prompt=transition_prompt)
+                transition = self.generate_response(transition_chain, combined_input)
+                script_segments.append(f"HOST: {transition}")
+            else:
+                closing_prompt = PromptTemplate(
+                    input_variables=["combined_input"],
+                    template="Provide a closing statement to wrap up the podcast, thanking the expert and audience."
+                )
+                closing_chain = LLMChain(llm=self.host_llm, prompt=closing_prompt)
+                closing = self.generate_response(closing_chain, combined_input)
+                script_segments.append(f"HOST: {closing}")
         
         return "\n\n".join(script_segments)
-
-    def format_script(self, script: str, include_timestamps: bool = True) -> str:
-        """
-        Format the generated script with optional timestamps and proper spacing.
-        
-        Args:
-            script (str): The raw generated script
-            include_timestamps (bool): Whether to include timestamps
-            
-        Returns:
-            str: The formatted script
-        """
-        formatted_segments = []
-        current_time = 0
-        
-        for segment in script.split("\n\n"):
-            if include_timestamps:
-                minutes = current_time // 60
-                seconds = current_time % 60
-                timestamp = f"[{minutes:02d}:{seconds:02d}]"
-                formatted_segments.append(f"{timestamp} {segment}")
-                current_time += 30  # Approximate 30 seconds per exchange
-            else:
-                formatted_segments.append(segment)
-        
-        return "\n\n".join(formatted_segments)
-
-# Example usage
-if __name__ == "__main__":
-    generator = PodcastScriptGenerator("your-api-key")
-    script = generator.generate_script("Your story content here")
-    formatted_script = generator.format_script(script)
-    print(formatted_script)

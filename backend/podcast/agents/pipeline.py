@@ -55,7 +55,7 @@ class NewsPodcastPipeline:
         topics = self.parse_topic_classifier(topic_classifier)
         topics = topics[0:min(len(topics), 3)]
         print("Generated Topics:", topics)
-        result = []
+        stories = []
         for topic in topics:
             news_item = self.scraper.get_top_headlines(prompt=topic)
             print("Generated News Item:", news_item)
@@ -65,16 +65,15 @@ class NewsPodcastPipeline:
             researched_stories = self.researcher.research_stories(news_item)
             print("Generated Research:", researched_stories)
 
-            print("Drafting stories...")
+            print(f"Drafting story for {topic}...")
             drafted_stories = self.drafter.draft_stories(researched_stories)
-            print("Drafted Stories:", drafted_stories)
-
-            print("Generating scripts...")
-            script = self.script_generator.generate_script(drafted_stories)
-            script_made = {"topic": topic, "scripts": script}
-            result.append(script_made)
-        print("Generated Podcast Scripts:", result)
-        return result
+            stories.append({"story": drafted_stories, "topic": topic})
+        script = self.script_generator.generate_script(stories)
+        script_made = {"scripts": script}
+        print(script_made)
+        return script_made
+        # print("Generated Podcast Scripts:", result)
+        # return result
 
 if __name__ == "__main__":
     # Initialize the pipeline
