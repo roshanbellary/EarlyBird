@@ -9,7 +9,7 @@ import time
 
 
 class PodcastScriptGenerator:
-    def __init__(self, mistral_api_key: stsr):
+    def __init__(self, mistral_api_key: str):
         # Initialize LLMs for host and expert with different temperatures
         self.host_llm = ChatOpenAI(
             model_name="mistral-tiny",

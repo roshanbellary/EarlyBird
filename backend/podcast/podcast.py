@@ -4,6 +4,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from agents.audio.audio_generation import PodcastAudioGenerator
 from agents.pipeline import NewsPodcastPipeline
+import json
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -52,6 +53,15 @@ class PodcastRunner:
         print("Generating audio...")
         audio_path = self.audio_generator.generate_audio(script)
         print(f"Podcast saved to: {audio_path}")
+
+        json_file_path = "finished_podcasts/podcast_metadata.json"
+        with open(json_file_path, "r") as file:
+            data = json.load(file)
+
+        data["metadata"].append({"file_path": audio_path, "datetime": datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+
+        with open(json_file_path, "w") as file:
+            json.dump(data, file, indent=4)
         
         return {
             'transcript_path': transcript_path,
