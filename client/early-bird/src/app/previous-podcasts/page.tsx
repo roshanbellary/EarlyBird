@@ -36,7 +36,7 @@ const PreviousPodcasts = () => {
       <h1 className="text-3xl font-bold">Previous EarlyBird Episodes</h1>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {previousPodcasts.map((podcast) => (
-          <Card key={podcast.title}>
+          <Card key={podcast.title + podcast.topic}>
             <CardHeader>
               <CardTitle>{podcast.title}</CardTitle>
             </CardHeader>

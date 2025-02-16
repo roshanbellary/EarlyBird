@@ -13,15 +13,22 @@ class DeepResearchAgent:
     def __init__(self, perplexity_api_key: str):
         self.perplexity = PerplexityAPI(perplexity_api_key)
         
-    def research_stories(self, headline: str) -> str:
+    def research_stories(self, headline: str, abstract: str) -> str:
         prompt = f"""
-        Conduct deep research on the following news story: {headline}
-        Research all current news articles within the past 24-48 hours that provide information related to this topic. 
-        Focus specificially on obtaining data regarding expert opinions, related events, statistical data, future implications
-        and give specific facts and evidence to support the evidence.
-        ONLY OUTPUT THE RELEVANT RESEARCH AND FACTS RELATED TO THE EVENT. DO NOT RETURN ANY OTHER TEXT.
+        The following headline and abstract is a trending news headline from the New York Times.
+
+        Research all current news articles that provide information and context related to this topic.
+        Your job is to find multiple perspectives and expert options for an UNBIASED summary of the topic.
+        Focus specifically on obtaining data regarding expert opinions, related events, statistical data, future implications
+        and givee specific facts and evidence to support the evidence. Your content should be a 1-2 UNBIASED 
+        and very compact and dense summary of the entire topic and story.
+         
+        Your results will be used by a downstream
+        AI agent, so much sure to output the results and NOTHING ELSE but the results. 
+
+        <HEADLINE>{headline}</HEADLINE>
+        <ABSTRACT>{abstract}</ABSTRACT>
         """
-        print(prompt)
 
         research = self.perplexity.perplexity_query([prompt])
         researched_stories = [{"headline": headline, "research": research}]
