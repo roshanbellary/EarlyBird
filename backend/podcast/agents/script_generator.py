@@ -114,28 +114,22 @@ class PodcastScriptGenerator:
         
         for i in range(len(content)):
             combined_input = f"Story Content: {content[i]["story"]}\n"
-            
-            host_intro = self.generate_response(self.host_chain, combined_input)
-            script_segments.append(f"HOST: {host_intro}")
+            host_input = combined_input
+            if i > 0:
+                host_input = f"The previous topic was {content[i-1]["topic"]} please transition within your response from this topic to this new topic described as follows\n {combined_input}"
+            host_intro = self.generate_response(self.host_chain, host_input)
+            script_segments.append(f"<HOST>{host_intro}</HOST>")
             
             expert_response = self.generate_response(self.expert_chain, combined_input)
-            script_segments.append(f"EXPERT: {expert_response}")
+            script_segments.append(f"<EXPERT>{expert_response}</EXPERT>")
             
-            if i < len(content) - 1:
-                transition_prompt = PromptTemplate(
-                    input_variables=["combined_input"],
-                    template=f"Provide a brief, natural transition statement to close this discussion and introduce the next topic: {content[i+1]["topic"]}"
-                )
-                transition_chain = LLMChain(llm=self.host_llm, prompt=transition_prompt)
-                transition = self.generate_response(transition_chain, combined_input)
-                script_segments.append(f"HOST: {transition}")
-            else:
+            if i == len(content) - 1:
                 closing_prompt = PromptTemplate(
                     input_variables=["combined_input"],
                     template="Provide a closing statement to wrap up the podcast, thanking the expert and audience."
                 )
                 closing_chain = LLMChain(llm=self.host_llm, prompt=closing_prompt)
                 closing = self.generate_response(closing_chain, combined_input)
-                script_segments.append(f"HOST: {closing}")
+                script_segments.append(f"<HOST>{closing}</HOST>")
         
         return "\n\n".join(script_segments)
