@@ -44,7 +44,7 @@ class NewsPodcastPipeline:
             parsed_story["content"] = story["choices"][0]["message"]["content"]
             result.append(parsed_story)
         return result
-    def generate_podcast(self) -> List[str]:
+    def generate_podcast(self) -> str:
         # Execute the pipeline
         print("Scraping news...")
         categories = ["politics", "technology", "business"]
@@ -67,9 +67,7 @@ class NewsPodcastPipeline:
             drafted_stories = self.drafter.draft_stories(researched_stories)
             stories.append({"story": drafted_stories, "topic": topic})
         script = self.script_generator.generate_script(stories)
-        script_made = {"scripts": script}
-        print(script_made)
-        return script_made
+        return script
         # print("Generated Podcast Scripts:", result)
         # return result
 
