@@ -15,7 +15,18 @@ import os
 import re
 import json
 from dotenv import load_dotenv
+
+from ml.inference.rl_bandit import HybridLinUCBModel
+# project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+# sys.path.insert(0, project_root)
+
+# from direct.inference.rl_bandit import HybridLinUCBModel
+# from direct.retrieval.merger import Article, Merger
+# from direct.inference.embed import Embedor
+
+
 load_dotenv()
+
 
 class NewsPodcastPipeline:
     def __init__(
@@ -29,6 +40,8 @@ class NewsPodcastPipeline:
         self.researcher = DeepResearchAgent(perplexity_api_key)
         self.drafter = StoryDrafterAgent(openai_api_key)
         self.stories = []
+        self.rl_agent = HybridLinUCBModel(articles=[], alpha=1.0, learning_rate=1.0, stabilization=0.001, feedback_exponent=2.0)
+
     def parse_topic_classifier(self, response: str) -> List[str]:
         topics = re.findall(r"<TOPIC>(.*?)</TOPIC>", response, re.DOTALL)
         return topics
