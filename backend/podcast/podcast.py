@@ -6,9 +6,8 @@ class PodcastRunner:
         self.audio_generator = PodcastAudioGenerator()
 
     def run(self):
-        scripts = self.pipeline.generate_podcast()
-        for script in scripts:
-            self.audio_generator.generate_audio(script["scripts"])
+        script = self.pipeline.generate_podcast()
+        self.audio_generator.generate_audio(script)
 
 if __name__ == "__main__":
     runner = PodcastRunner()

@@ -1,8 +1,8 @@
-from scraper import NewsScraperAgent
-from researcher import DeepResearchAgent
-from story_drafter import StoryDrafterAgent
-from script_generator import PodcastScriptGenerator
-from interest_classifier import InterestClassifierAgent
+from .scraper import NewsScraperAgent
+from .researcher import DeepResearchAgent
+from .story_drafter import StoryDrafterAgent
+from .script_generator import PodcastScriptGenerator
+from .interest_classifier import InterestClassifierAgent
 from langchain.agents import Tool, AgentExecutor, create_react_agent
 from langchain_community.chat_models import ChatOpenAI
 from langchain.tools import BaseTool

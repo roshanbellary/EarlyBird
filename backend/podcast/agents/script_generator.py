@@ -105,6 +105,7 @@ class PodcastScriptGenerator:
         print("content:", content)
 
         for i in range(len(content)):
+            for j in range()
             combined_input = f"Story Content: {content[i]['story']}\n"
             
             # Ensure smooth transitions between topics

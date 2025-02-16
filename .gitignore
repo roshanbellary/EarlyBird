@@ -37,3 +37,27 @@ build/
 ehthumbs.db
 Thumbs.db
 
+# React Native
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+.expo/
+.expo-shared/
+
+# Metro bundler
+*.metro-bundler-cache/
+*.metro-cache/
+
+# Logs
+*.log
+
+# Build generated files
+android/app/build/
+ios/Pods/
+ios/build/
+
+# pulkith shit
+direct
+
+
