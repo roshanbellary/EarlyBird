@@ -15,7 +15,7 @@ class StoryDrafterAgent:
             self.prompt = PromptTemplate(
                 input_variables=["story_data"],
                 template="""
-                Draft a compelling podcast story based on this research:
+                Draft a compelling story based on this research:
                 {story_data}
                 Include a hook to grab attention, a clear narrative structure, key points and analysis, engaging transitions, and thought-provoking conclusions.
                 Ensure all the facts and evidence related to the story from the research are incorporated in a coherent and engaging manner and remain in the story.

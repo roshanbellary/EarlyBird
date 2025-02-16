@@ -8,6 +8,7 @@ certifi==2025.1.31
 charset-normalizer==3.4.1
 dataclasses-json==0.6.7
 distro==1.9.0
+elevenlabs==1.51.0
 eval_type_backport==0.2.2
 filelock==3.17.0
 frozenlist==1.5.0
@@ -26,7 +27,7 @@ langchain==0.3.18
 langchain-community==0.3.17
 langchain-core==0.3.35
 langchain-mistralai==0.2.6
-langchain-openai==0.3.5
+langchain-openai==0.3.6
 langchain-text-splitters==0.3.6
 langgraph==0.2.72
 langgraph-checkpoint==2.0.15
@@ -37,6 +38,7 @@ mistralai==1.5.0
 msgpack==1.1.0
 multidict==6.1.0
 mypy-extensions==1.0.0
+numpy==1.26.4
 openai==1.63.0
 orjson==3.10.15
 packaging==24.2
@@ -44,6 +46,7 @@ propcache==0.2.1
 pydantic==2.10.6
 pydantic-settings==2.7.1
 pydantic_core==2.27.2
+pydub==0.25.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 PyYAML==6.0.2
@@ -60,5 +63,6 @@ tqdm==4.67.1
 typing-inspect==0.9.0
 typing_extensions==4.12.2
 urllib3==2.3.0
+websockets==14.2
 yarl==1.18.3
 zstandard==0.23.0
