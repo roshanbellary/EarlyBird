@@ -1,63 +1,123 @@
-"use client"
+"use client";
 
-import { useEffect, useRef } from "react"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import React, { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
+import styles from './PodcastGraph.module.css';
 
-export default function PodcastGraph() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+// Dynamically import Plotly to ensure it runs only on the client-side
+const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
 
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    canvas.width = 600
-    canvas.height = 400
-
-    ctx.fillStyle = "rgba(59, 130, 246, 0.5)"
-    ctx.strokeStyle = "rgb(59, 130, 246)"
-
-    const podcasts = [
-      { x: 100, y: 100, r: 20, name: "Morning Tech" },
-      { x: 200, y: 150, r: 25, name: "Dawn AI" },
-      { x: 300, y: 200, r: 30, name: "EarlyBird Daily" },
-      { x: 400, y: 100, r: 22, name: "Sunrise Dev" },
-      { x: 500, y: 300, r: 18, name: "AM Insights" },
-    ]
-
-    podcasts.forEach((podcast) => {
-      ctx.beginPath()
-      ctx.arc(podcast.x, podcast.y, podcast.r, 0, 2 * Math.PI)
-      ctx.fill()
-      ctx.stroke()
-
-      ctx.fillStyle = "black"
-      ctx.font = "12px Arial"
-      ctx.textAlign = "center"
-      ctx.fillText(podcast.name, podcast.x, podcast.y + podcast.r + 15)
-    })
-
-    ctx.beginPath()
-    ctx.moveTo(podcasts[0].x, podcasts[0].y)
-    podcasts.slice(1).forEach((podcast) => {
-      ctx.lineTo(podcast.x, podcast.y)
-    })
-    ctx.stroke()
-  }, [])
-
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">EarlyBird Podcast Network</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Morning Podcast in the EarlyBird Network</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <canvas ref={canvasRef} className="mx-auto"></canvas>
-        </CardContent>
-      </Card>
-    </div>
-  )
+// Define the structure of a Node
+interface Node {
+  id: number;
+  position: [number, number, number];
+  label: string;
+  interest_score: number;
 }
 
+const PodcastGraph: React.FC = () => {
+  const [nodes, setNodes] = useState<Node[]>([]);
+  const [x, setX] = useState<number[]>([]);
+  const [y, setY] = useState<number[]>([]);
+  const [z, setZ] = useState<number[]>([]);
+  const [labels, setLabels] = useState<string[]>([]);
+  const [colors, setColors] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Fetch nodes data from the API
+    const fetchNodes = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/graph_init');
+        const data = await response.json();
+        setNodes(data.nodes);
+      } catch (error) {
+        console.error('Error fetching graph data:', error);
+      }
+    };
+
+    fetchNodes();
+  }, []);
+
+  useEffect(() => {
+    // Update coordinates, labels, and colors when nodes change
+    if (nodes.length > 0) {
+      setX(nodes.map((node) => node.position[0]));
+      setY(nodes.map((node) => node.position[1]));
+      setZ(nodes.map((node) => node.position[2]));
+      setLabels(nodes.map((node) => node.label));
+      setColors(
+        nodes.map((node) => {
+          const score = node.interest_score;
+          // Calculate the color based on interest_score
+          const red = 255;
+          const green = 255;
+          const blue = Math.round(255 * (1 - score));
+          return `rgb(${red}, ${green}, ${blue})`;
+        })
+      );
+    }
+  }, [nodes]);
+
+  // Handler for click events on the plot
+  const handlePlotClick = async (event: any) => {
+    if (event && event.points && event.points.length > 0) {
+      console.log('click event');
+      const point = event.points[0];
+      const xCoord = point.x;
+      const yCoord = point.y;
+      const zCoord = point.z;
+      try {
+        const response = await fetch(
+          `http://localhost:8000/api/graph_update/${xCoord}/${yCoord}/${zCoord}`
+        );
+        const data = await response.json();
+        setNodes(data.nodes);
+      } catch (error) {
+        console.error('Error calling graph update function:', error);
+      }
+    }
+  };
+
+  return (
+    <div className={styles.container}>
+      <Plot
+        data={[
+          {
+            x,
+            y,
+            z,
+            mode: 'markers+text',
+            marker: { size: 10, color: colors }, // Increased marker size
+            type: 'scatter3d',
+            text: labels,
+            hoverinfo: 'text',
+            textposition: 'top center',
+            textfont: {
+              size: 15, // Increased text size
+              color: '#A6EC99', // White text color
+            },
+          },
+        ]}
+        layout={{
+          template: 'plotly_dark', // Apply dark theme
+          scene: {
+            xaxis: { visible: false },
+            yaxis: { visible: false },
+            zaxis: { visible: false },
+            camera: {
+              eye: { x: 0.4, y: 0.4, z: 0.4 }, // Adjust these values to set the desired zoom level
+            },
+            aspectmode: 'data', // Ensures the aspect ratio follows the data
+          },
+          margin: { l: 0, r: 0, t: 0, b: 0 }, // Remove margins
+          paper_bgcolor: '#121212', // Dark background color
+        }}
+        useResizeHandler={true}
+        style={{ width: '100%', height: '100%' }} // Ensure the plot fills the container
+        onClick={handlePlotClick}
+      />
+    </div>
+  );
+};
+
+export default PodcastGraph;

@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# db
+/backend/podcast/ml/retrieval/db
+
 # production
 /build
 

@@ -8,6 +8,12 @@ from backend.podcast.agents.audio.audio_generation import PodcastAudioGenerator
 from backend.podcast.agents.pipeline import NewsPodcastPipeline
 
 from backend.podcast.AppData import AppData
+from backend.podcast.agents.audio.audio_generation import PodcastAudioGenerator
+from backend.podcast.agents.pipeline import NewsPodcastPipeline
+
+print(os.getcwd())
+from backend.podcast.agents.audio.audio_generation import PodcastAudioGenerator
+from backend.podcast.agents.pipeline import NewsPodcastPipeline
 
 import json
 

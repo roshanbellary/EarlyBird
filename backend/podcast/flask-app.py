@@ -6,11 +6,17 @@ from flask import Flask, request, send_from_directory, jsonify
 from flask_cors import CORS
 import logging
 from podcast import PodcastRunner
+from backend.podcast.agents.pipeline import NewsPodcastPipeline
+from backend.podcast.agents.pipeline import NewsPodcastPipeline
 from typing import Dict, Any
 import json
 from flask_socketio import SocketIO, emit
 
 from backend.podcast.AppData import AppData
+
+from podcast.global_instances import rl_model, graph
+import whisper
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -87,7 +93,12 @@ def generate():
         # data = request.get_json()
         # if not data:
         #     return jsonify({"error": "Invalid JSON data"}), 400
+        # data = request.get_json()
+        # if not data:
+        #     return jsonify({"error": "Invalid JSON data"}), 400
 
+        # interests = data.get("interests", "")
+        # logger.info(f"Received interests: {interests}")  # Log interests to see them
         # interests = data.get("interests", "")
         # logger.info(f"Received interests: {interests}")  # Log interests to see them
 
@@ -127,10 +138,13 @@ def generate():
         if audio_path:  # Ensure audio_path is not None
             filenames = os.path.basename(podcast_dir)
             return jsonify({"file_urls": filenames, "podcast_dir": podcast_dir, "transcript_path": transcript_path}), 200
+            filenames = os.path.basename(podcast_dir)
+            return jsonify({"file_urls": filenames, "podcast_dir": podcast_dir, "transcript_path": transcript_path}), 200
         else:
             logger.error("Audio path is not set.")
             return jsonify({"error": "Internal server error"}), 500
     except Exception as e:
+        logger.exception(f"Error serving file {filenames}: {str(e)}")
         logger.exception(f"Error serving file {filenames}: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
@@ -168,6 +182,7 @@ def generate_answer():
         return jsonify({"error": "Internal server error"}), 500
 
 @app.route("/download/<filename>/<num>", methods=["GET"])
+@app.route("/download/<filename>/<num>", methods=["GET"])
 def download(filename, num = 1):
     """Serves the generated MP3 file from the podcast directory."""
     try:
@@ -177,7 +192,9 @@ def download(filename, num = 1):
             logger.error(f"Podcast directory not found: {podcast_dir}")
             return jsonify({"error": "Podcast directory not found"}), 500
         
+        
         # Build the full path to the MP3 file
+        podcast_audio_path = os.path.join(podcast_dir, filename, f"interaction_{num}.mp3")
         podcast_audio_path = os.path.join(podcast_dir, filename, f"interaction_{num}.mp3")
         logger.info(f"Podcast audio path: {podcast_audio_path}")
         if not os.path.exists(podcast_audio_path):
@@ -185,6 +202,7 @@ def download(filename, num = 1):
             return jsonify({"error": "File not found"}), 404
 
         # Serve the file
+        return send_from_directory(os.path.dirname(podcast_audio_path), os.path.basename(podcast_audio_path), as_attachment=True)
         return send_from_directory(os.path.dirname(podcast_audio_path), os.path.basename(podcast_audio_path), as_attachment=True)
     
     except Exception as e:
@@ -207,6 +225,88 @@ def get_all_transcript_files():
     except Exception as e:
         logger.error(f"Error retrieving transcripts: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
+
+@app.route("/api/graph_init", methods=["GET"])
+def graph_init():
+    e = graph.generate_init_nodes()
+    print('embedding', e)
+    graph.update_interest_scores()
+
+    nodes = []
+    categories = []
+    for i in range(len(graph.nodes)):
+        nodes.append({'id': i, 'position': graph.nodes[i].embedding_3d, 'label': '', 'interest_score': 0})
+        if graph.nodes[i].section not in categories:
+            categories.append(graph.nodes[i].section)
+            nodes[i]['label'] = graph.nodes[i].section
+
+    print('nodes', nodes)
+    # Return JSON in a format convenient for your frontend
+    return jsonify({"nodes": nodes, "edges": []})
+
+@app.route("/api/graph_update/<x>/<y>/<z>", methods=["GET"])
+def graph_update(x, y, z):
+    graph.update_rl_model(float(x), float(y), float(z))
+    print('updated rl')
+    graph.update_interest_scores()
+    print('updated interest scores')
+    print(graph.nodes)
+
+    nodes = []
+    categories = []
+    for i in range(len(graph.nodes)):
+        nodes.append({'id': i, 'position': graph.nodes[i].embedding_3d, 'label': '', 'interest_score': graph.nodes[i].interest_score})
+        if graph.nodes[i].section not in categories:
+            categories.append(graph.nodes[i].section)
+            nodes[i]['label'] = graph.nodes[i].section
+    
+    print('nodes', nodes)
+    print('finished updating')
+    # Return JSON in a format convenient for your frontend
+    return jsonify({"nodes": nodes, "edges": []})
+
+
+@app.route("/interrupt", methods=["POST"])
+def get_response():
+    """Transcribes the audio blob and returns an expert response."""
+    try:
+        if 'audio' not in request.files:
+            logger.error("No audio file part in the request")
+            return jsonify({"error": "No audio file part in the request"}), 400
+        
+        audio_file = request.files['audio']
+        file_path = request.form.get('file_path')
+        if audio_file.filename == '':
+            logger.error("No selected file")
+            return jsonify({"error": "No selected file"}), 400
+        
+        # Save the audio file temporarily
+        temp_audio_path = os.path.join(app.config['PODCAST_DIR'], "temp_audio.wav")
+        audio_file.save(temp_audio_path)
+        
+        # Use Whisper to transcribe the audio file
+        model = whisper.load_model("base")
+        result = model.transcribe(temp_audio_path)
+        transcription = result["text"]
+        logger.info(f"Transcription: {transcription}")
+        logger.info(f"File path: {file_path}")
+        # Call the response function to generate an expert response
+        pipeline = NewsPodcastPipeline()
+        interrupt_path = pipeline.user_ask_expert(question=transcription, filepath=file_path)
+        logger.info(f"Expert response: {interrupt_path}")
+        
+        # Clean up the temporary audio file
+        os.remove(temp_audio_path)
+        
+        return jsonify({"response": interrupt_path}), 200
+    except Exception as e:
+        logger.error(f"Error processing audio file: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
+def generate_expert_response(transcription: str) -> str:
+    """Generates an expert response based on the transcription."""
+    # Placeholder function - replace with actual implementation
+    return f"Expert response to: {transcription}"
 
 @app.errorhandler(Exception)
 def handle_error(error):

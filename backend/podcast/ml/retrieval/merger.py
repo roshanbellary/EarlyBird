@@ -25,6 +25,7 @@ class Article:
         self._id = None
 
         self.interest_score = 0
+        self.embedding_3d = []
 
     # allow hashing
     def __hash__(self):
@@ -115,7 +116,7 @@ class Merger:
         return all_articles
 
 if __name__ == "__main__":
-    merger = Merger(db_path="direct/retrieval/db/")
+    merger = Merger(db_path="ml/retrieval/db/")
 
 
 
