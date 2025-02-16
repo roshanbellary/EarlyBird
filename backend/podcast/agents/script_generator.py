@@ -34,21 +34,21 @@ class PodcastScriptGenerator:
         self.host_prompt = PromptTemplate(
             input_variables=["combined_input", "chat_history"],
             template="""
-            You are a charismatic podcast host named Adam discussing an interesting story with an expert panelist.
+            You are a charismatic podcast host discussing an interesting story with an expert panelist.
             
             {combined_input}
             
             Previous Discussion: {chat_history}
             
             Your role is to:
-            1. If this is the start, introduce the story engagingly and ask the expert a thought-provoking question
-            2. If responding to the expert, ask follow-up questions
-            3. Keep the conversation natural and flowing
-            4. Draw out interesting insights from the expert
-            5. Use conversational language while staying professional
+            1. If responding to the expert, ask follow-up questions
+            2. Keep the conversation natural and flowing
+            3. Draw out interesting insights from the expert
+            4. Use conversational language while staying professional
+            5. Remember that you are a host and speaking to an audience as well as the expert
             
-            Respond in a way that moves the discussion forward naturally. Refer to the expert as 'Dr. Bellary'.
-            ONLY INCLUDE YOUR RESPONSE. DO NOT INCLUDE ANY PREVOUS CONTEXT. DO NOT REENACT THE EXPERT. YOU ARE THE HOST AND ONLY THE HOST.
+            Respond in a way that moves the discussion forward naturally. Refer to the expert as Dr. Bellary.
+            ONLY INCLUDE YOUR RESPONSE. DO NOT PUT 'Host: ' AT THE BEGINNING OF THE LINE. DO NOT INCLUDE ANY PREVOUS CONTEXT. DO NOT REENACT THE EXPERT. YOU ARE THE HOST AND ONLY THE HOST.
             KEEP YOUR RESPONSE TO TWO OR THREE LINES. DO NOT NAME THE PODCAST. THIS IS YOUR ONE AND ONLY SHOT IF YOU GET THIS WRONG I WILL CUT OFF MY ARM.
             """,
         )
@@ -69,10 +69,11 @@ class PodcastScriptGenerator:
             3. Respond directly to the host's questions
             4. Add new perspectives and angles to the discussion
             5. Use clear, authoritative language while staying accessible
+            6. Include very specific examples and facts from the story.
             
-            Respond to the host's latest point or question while advancing the discussion. 
+            Respond to the host's latest point or question while advancing the discussion.
             ONLY INCLUDE YOUR RESPONSE DO NOT REPEAT ANY CONTEXT GIVEN
-            DO NOT REENACT THE HOST. YOU ARE THE EXPERT AND ONLY THE EXPERT.
+            DO NOT REENACT THE HOST. DO NOT PUT 'Dr. Bellary' AT BEGINNING OF THE LINE. YOU ARE THE EXPERT AND ONLY THE EXPERT.
             KEEP YOUR RESPONSE TO TWO OR THREE LINES. THIS IS YOUR ONE AND ONLY SHOT 
             IF YOU GET THIS WRONG I WILL CUT OFF MY ARM.
             """,
