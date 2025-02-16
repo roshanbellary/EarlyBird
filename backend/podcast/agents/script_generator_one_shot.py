@@ -37,7 +37,7 @@ class PodcastScriptGenerator:
             """
         
         structured_prompt =  """ 
-                You are writing entertaining, and informative podcast script in the style of NPR's "Up First." 
+                You are writing entertaining, and informative podcast script in the style of NPR's "Up First." The podcast name is "Early Bird""
                 It must alternate between <HOSTi> and <EXPERTi> tags, where i is the index of the story. like this:
 
                 <HOST0>

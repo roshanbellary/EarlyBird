@@ -16,5 +16,6 @@ openai.api_key = api_key
 
 # Fetch and print available models
 models = openai.models.list()
-for model in models['data']:
-    print(model['id'])
+
+for model in models.data:  # Use .data as an attribute instead of indexing
+    print(model.id)  # Use .id instead of ['id']

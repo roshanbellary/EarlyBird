@@ -126,7 +126,7 @@ class PodcastRunner:
 if __name__ == "__main__":
     import sys
     # Use regular pipeline
-    # runner = PodcastRunner(use_one_shot=False)
+    #runner = PodcastRunner(use_one_shot=False)
 
     # Use one-shot pipeline
     runner = PodcastRunner(use_one_shot=True)
