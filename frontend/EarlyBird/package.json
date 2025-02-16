@@ -1,0 +1,19 @@
+{
+    "name": "EarlyBird",
+    "version": "0.0.1",
+    "private": true,
+    "scripts": {
+      "android": "react-native run-android",
+      "ios": "react-native run-ios",
+      "start": "react-native start",
+      "web": "react-scripts start",
+      "build-web": "react-scripts build"
+    },
+    "dependencies": {
+      "react": "18.2.0",
+      "react-native": "0.77.1",
+      "react-dom": "18.2.0",
+      "react-native-web": "^0.19.0",
+      "react-scripts": "^5.0.1"
+    }
+  }
