@@ -17,13 +17,9 @@ class StoryDrafterAgent:
                 template="""
                 Draft a compelling podcast story based on this research:
                 {story_data}
-                
-                Include:
-                1. A hook to grab attention
-                2. Clear narrative structure
-                3. Key points and analysis
-                4. Engaging transitions
-                5. Thought-provoking conclusions
+                Include a hook to grab attention, a clear narrative structure, key points and analysis, engaging transitions, and thought-provoking conclusions.
+                Ensure all the facts and evidence related to the story from the research are incorporated in a coherent and engaging manner and remain in the story.
+                ONLY OUTPUT THE STORY PRODUCED BASED ON THE RESEARCH. DO NOT RETURN ANY OTHER TEXT.
                 """
             )
         else:
