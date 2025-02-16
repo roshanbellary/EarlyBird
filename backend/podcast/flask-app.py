@@ -7,6 +7,7 @@ import logging
 from podcast import PodcastRunner
 from typing import Dict, Any
 import json
+import whisper
 # Configure logging
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -118,6 +119,46 @@ def get_all_transcript_files():
     except Exception as e:
         logger.error(f"Error retrieving transcripts: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
+
+@app.route("/interrupt", methods=["POST"])
+def get_response():
+    """Transcribes the audio blob and returns an expert response."""
+    try:
+        if 'audio' not in request.files:
+            logger.error("No audio file part in the request")
+            return jsonify({"error": "No audio file part in the request"}), 400
+        
+        audio_file = request.files['audio']
+        if audio_file.filename == '':
+            logger.error("No selected file")
+            return jsonify({"error": "No selected file"}), 400
+        
+        # Save the audio file temporarily
+        temp_audio_path = os.path.join(app.config['PODCAST_DIR'], "temp_audio.wav")
+        audio_file.save(temp_audio_path)
+        
+        # Use Whisper to transcribe the audio file
+        model = whisper.load_model("base")
+        result = model.transcribe(temp_audio_path)
+        transcription = result["text"]
+        logger.info(f"Transcription: {transcription}")
+        
+        # Call the response function to generate an expert response
+        expert_response = generate_expert_response(transcription)
+        logger.info(f"Expert response: {expert_response}")
+        
+        # Clean up the temporary audio file
+        os.remove(temp_audio_path)
+        
+        return jsonify({"transcription": transcription, "response": expert_response}), 200
+    except Exception as e:
+        logger.error(f"Error processing audio file: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
+def generate_expert_response(transcription: str) -> str:
+    """Generates an expert response based on the transcription."""
+    # Placeholder function - replace with actual implementation
+    return f"Expert response to: {transcription}"
 
 @app.errorhandler(Exception)
 def handle_error(error):
