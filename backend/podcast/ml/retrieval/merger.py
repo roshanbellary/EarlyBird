@@ -1,5 +1,5 @@
 import json
-from .db.db_utils import DBUtils
+from backend.podcast.ml.retrieval.db.db_utils import DBUtils
 
 
 class Article:

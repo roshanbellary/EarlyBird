@@ -1,79 +1,156 @@
 from langchain_community.chat_models import ChatOpenAI
-from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
-from langchain.memory import ConversationBufferWindowMemory
 from typing import Dict, List
 import os
 import time
 
+from backend.podcast.ml.retrieval.merger import Article
 
 class PodcastScriptGenerator:
     def __init__(self, mistral_api_key: str):
-        # Initialize LLMs for host and expert with different temperatures
+        self._initialize_llms(mistral_api_key)
+        self.chat_history = []
+        self._initialize_prompts()
+        self._initialize_chains()
+
+    def _initialize_llms(self, mistral_api_key: str):
         self.host_llm = ChatOpenAI(
             model_name="mistral-tiny",
             openai_api_base="https://api.mistral.ai/v1",
             openai_api_key=mistral_api_key,
+            temperature=0.7,
+            # model_name="gpt-4o-mini",
+            # temperature=0.7,
+            # openai_api_key=os.getenv("OPENAI_API_KEY")
         )
-
         self.expert_llm = ChatOpenAI(
             model_name="mistral-tiny",
             openai_api_base="https://api.mistral.ai/v1",
             openai_api_key=mistral_api_key,
+            temperature=0.2,
+            # model_name="gpt-4o-mini",
+            # temperature=0.2,
+            # openai_api_key=os.getenv("OPENAI_API_KEY")
         )
 
-        self.chat_history = []
-
-        # Updated host prompt
+    def _initialize_prompts(self):
         self.host_prompt = PromptTemplate(
-            input_variables=["combined_input", "chat_history"],
+            input_variables=[
+                "headline",
+                "abstract",
+                "combined_input",
+                "chat_history",
+                "role_instructions"
+            ],
             template="""
-            You are a charismatic podcast host discussing an interesting story with an expert panelist.
-            
-            {combined_input}
-            
-            Previous Discussion: {chat_history}
-            
+            You are a charismatic news anchor host discussing an interesting story with an expert panelist in a short format. You are part of a morning
+            news application, where the user can listen to the news while getting ready in the morning. 
+
+            DO NOT introduce yourself or Dr.Bird, just start talking.
+
             Your role is to:
             1. Respond to the expert in a few words and ask follow up questions regarding the information in the story to continue the conversation
-            2. Keep the conversation natural and flowing
-            3. Use conversational language while staying professional
-            4. Remember that you are a host and speaking to an audience as well as the expert
-            
+            2. Keep the conversation natural and flowing (introduce stories, talk with the expert, transitions, etc...)
+            3. Use conversational language while staying professional like a news anchor
+
+            The expert's name is Dr. Bird. Use your context to make the conversation natural and varied. Make sure
+            the entire conversation is similar to a news anchor (i.e. varied, unique, fun).
+
+            You only have a couple sentences, try to be dense in your information delivery, while keeping it conversational.
+
             Respond in a way that moves the discussion forward naturally.
-            ONLY INCLUDE YOUR RESPONSE. YOU MUST LIMIT RESPONSES TO 1-2 SENTENCES. DO NOT PUT 'Host: ' AT THE BEGINNING OF THE LINE. DO NOT INCLUDE ANY PREVOUS CONTEXT. DO NOT REENACT THE EXPERT. YOU ARE THE HOST AND ONLY THE HOST.
-            DO NOT NAME THE PODCAST. DO NOT REFER TO THE EXPERT AS 'EXPERT' OR 'DR. BELLARY'. THIS IS YOUR ONE AND ONLY SHOT IF YOU BREAK ONE OF THESE RULES I WILL CUT OFF MY ARM.
+
+            YOU GET ONE INTRO MESSAGE, ONE INTERMEDDIATE MESSAGE AND ONE CLOSING MESSAGE. USE THEM WISELY. Use
+            the past messages to inform your response and figure out which message you are on.
+
+            ONLY INCLUDE YOUR RESPONSE AND NOTHING ELSE. YOU MUST LIMIT RESPONSES TO 1 SENTENCE IN MOST cases and 2 if you
+            really need more space. DO NOT PUT 'Host: ' AT THE BEGINNING OF THE LINE. DO NOT REENACT THE EXPERT. YOU ARE THE HOST AND ONLY THE HOST.
+            DO NOT NAME THE PODCAST. THIS IS YOUR ONE AND ONLY SHOT IF YOU BREAK ONE OF THESE RULES I WILL CUT OFF MY ARM.
+
+            <ROLE_INSTRUCTIONS>
+            THIS IS IMPORTANT FOR YOUR CURRENT MESSAGE
+            {role_instructions}
+            </ROLE_INSTRUCTIONS>
+
+            <HEADLINE>
+            {headline}
+            </HEADLINE>
+
+            <ABSTRACT>
+            {abstract}
+            </ABSTRACT>
+
+            <FULL_STORY>
+            {full_story}
+            </FULL_STORY>
+
+
+            <PAST_CONVERSATION>
+            {chat_history}
+            </PAST_CONVERSATION>
             """,
         )
 
-        # Updated expert prompt
         self.expert_prompt = PromptTemplate(
-            input_variables=["combined_input", "chat_history"],
+            input_variables=[
+                "headline",
+                "abstract",
+                "full_story",
+                "chat_history",
+                "role_instructions"
+            ],
             template="""
-            You are a knowledgeable expert panelist named Dr. Bellary on a podcast discussing a story.
-            
-            {combined_input}
-            
-            Previous Discussion: {chat_history}
-            
-            Your role is to:
+            You are a knowledgeable and charismatic expert, Dr. Bird, discussing an interesting story with a news anchor in a short format. You are part of a morning
+            news application, where the user can listen to the news while getting ready in the morning. 
+
+            DO NOT introduce yourself or the anchor, just start talking.
+
             1. Provide deep, insightful, concise analysis of the story
-            2. Draw from relevant expertise and experience
-            3. Respond directly to the host's questions
+            2. Draw from (imagined) relevant expertise and experience
+            3. Respond directly to the news anchor's questions or keep the conversation going
             4. Add new perspectives and angles to the discussion
-            5. Use clear, authoritative language while staying accessible
-            6. Include very specific examples and facts from the story.
+            5. Use clear, authoritative language while staying accessible and engaging
+            6. Perhaps, include very specific examples and facts from the story.
             
-            Respond to the host's latest point or question while advancing the discussion.
-            ONLY INCLUDE YOUR RESPONSE DO NOT REPEAT ANY CONTEXT GIVEN. YOU MUST LIMIT RESPONSES TO 1-2 SENTENCES.
-            DO NOT REENACT THE HOST. DO NOT PUT 'Dr. Bellary' AT BEGINNING OF THE LINE. YOU ARE THE EXPERT AND ONLY THE EXPERT.
-            KEEP YOUR RESPONSE TO TWO OR THREE LINES. THIS IS YOUR ONE AND ONLY SHOT 
-            IF YOU DO BREAK ONE OF THESE RULES I WILL CUT OFF MY ARM.
+            Use your context to make the conversation natural and varied. Make sure
+            the entire conversation is similar to a expert (i.e. varied, unique, informational).
+
+            You only have a couple sentences, try to be dense in your information delivery, while keeping it conversational.
+
+            YOU GET 2 MESSAGES (between the host's first and 2nd message, and between the host's 2nd and closing message). USE THEM WISELY. YOU GET ONE INTRO MESSAGE, ONE INTERMEDDIATE MESSAGE AND ONE CLOSING MESSAGE. USE THEM WISELY. Use
+            the past messages to inform your response and figure out which message you are on.
+
+            ONLY INCLUDE YOUR RESPONSE AND NOTHING ELSE. OU MUST LIMIT RESPONSES TO 1 SENTENCE IN MOST cases and 2 if you
+            really need more space. DO NOT PUT 'Dr.Bird: ' 
+            AT THE BEGINNING OF THE LINE. DO NOT REENACT THE NEWS ANCHOR. YOU ARE THE EXPERT AND ONLY THE EXPERT.
+            DO NOT NAME THE PODCAST. THIS IS YOUR ONE AND ONLY SHOT IF YOU BREAK ONE OF THESE RULES I WILL CUT OFF MY ARM.
+
+            <ROLE_INSTRUCTIONS>
+            THIS IS IMPORTANT FOR YOUR CURRENT MESSAGE
+            {role_instructions}
+            </ROLE_INSTRUCTIONS>
+
+            <HEADLINE>
+            {headline}
+            </HEADLINE>
+
+            <ABSTRACT>
+            {abstract}
+            </ABSTRACT>
+
+            <FULL_STORY>
+            {full_story}
+            </FULL_STORY>
+
+
+            <PAST_CONVERSATION>
+            {chat_history}
+            </PAST_CONVERSATION>
             """,
         )
 
-        # Create LLM chains with updated configuration
+    def _initialize_chains(self):
         self.host_chain = LLMChain(
             llm=self.host_llm,
             prompt=self.host_prompt,
@@ -86,61 +163,78 @@ class PodcastScriptGenerator:
             verbose=False,
         )
 
-    def generate_response(self, chain, combined_input: str) -> str:
+    def generate_response(self, chain, article: Article, role_instructions: str) -> str:
         """
         Generate a response with basic rate limiting
         """
         # Add small delay to prevent rate limiting
-        time.sleep(1)
-        return chain.run(combined_input=combined_input, chat_history=self.chat_history)
+        time.sleep(0.3)
+        return chain.run(
+            headline=article.title,
+            abstract=article.abstract,
+            full_story=article.content, 
+            chat_history="\n".join(self.chat_history),
+            role_instructions=role_instructions
+        )
 
-    def generate_script(self, content: List[Dict]) -> str:
-        print(content)
-        story_text = content[-1]["story"][0]['draft']
+    def generate_next_script(self, is_host: bool, is_last: bool, story: Article, index: int, include_first_hello: bool = False) -> str:
+        """
+        Generate the next part of the podcast script.
+        
+        Args:
+            is_host: True if generating host's response, False for expert
+            is_first: True if this is the first interaction for this story
+            is_last: True if this is the last interaction of the podcast
+            story_text: The story content to discuss
+            index: Current interaction index
+        """
+        if is_host:
+            if index == 0 and is_host: # is first
+                    combined_input = f"""
+                        Give a 1 sentence introduction to the attached story in a way that
+                         the user can get A lot of context to the story (like a headline, but slightly more conversational)
+                           Make sure it is informational and the reader
+                        has no context. Make it like a news headline. Keep it simple and informational. The expert will be responding to you.
+                        But you do not necessarily need to ask a question.
 
-        for j in range(2):
-            if j == 0:
-                if len(content) == 1:
-                    combined_input = f"""
-                        Give a 1 sentence introduction to the attached story in a headline format. YOU MUST FOLLOW THIS INTRODUCTION FORMAT.
-                        Here is the story: {story_text}
+                        First Story: {include_first_hello}
+
+                        If this is the First Story, then introduce the listner to the show in a unique friendly way. Keep it very short. If it 
+                        is not the first story, you are transition from the last story to the new story, so include a very short and simple AND VARIED
+                        transition.
                     """
-                else:
-                    combined_input = f"""
-                        Now, give a 1 sentence transition to the new story in the form 'thank you for your input. now moving on to a new topic I would love to hear your opinion on the new story'. 
-                        Ensure the transition is very vague because you do not have context on the previous story. YOU MUST FOLLOW THIS TRANSITION FORMAT.
-                        Here is the story: {story_text}
-                    """
-            else:
+            elif is_last:
                 combined_input = f"""
-                    Here is the story: {story_text}
+                    Give a 1 sentence closing statement to the attached story 
+                    for the conclusion the listener should take it away. Keep it simple and informational.
+                    You DO NOT transition to the next topic, just wrap the current story up. DO NOT 
+                    ASK ANOTHER QUESTION, just wrap it up.
                 """
+            else:
+                combined_input = f""
 
-            # print(combined_input)
+            response = self.generate_response(self.host_chain, story, combined_input)
+                
+            self.chat_history.append(f"<HOST{index}>{response}</HOST{index}>")
+        else:
+            response = self.generate_response(self.expert_chain, story, "")
+            self.chat_history.append(f"<EXPERT{index}>{response}</EXPERT{index}>")
+            
+        return response
 
-            i = 2 * (len(content) - 1) + j
-            # Host's introduction/response
-            host_intro = self.generate_response(self.host_chain, combined_input)
-            if len(content) == 1 and j == 0:
-                host_intro = f"Hello and welcome to EarlyBird!" + host_intro
-            self.chat_history.append(f"<HOST{i}>{host_intro}</HOST{i}>")
+    def generate_script(self, article: Article, research: str) -> str:
+        """Original script generation function that uses generate_next_script"""
+        i = 0
+        iterations = 2
 
-            # Expert's response using the story text
-            expert_response = self.generate_response(self.expert_chain, story_text)
-            self.chat_history.append(f"<EXPERT{i}>{expert_response}</EXPERT{i}>")
+        for j in range(iterations):
+            self.generate_next_script(True, False, article, i)  # Generate host's part
+            
+            self.generate_next_script(False, False, article, i) # Generate expert's part
+            i += 1
 
-        if len(content) == 3:
-            # Add final closing statement
-            if len(content) > 0:
-                closing_prompt = PromptTemplate(
-                    input_variables=["combined_input"],
-                    template="""
-                            Provide a brief 1 sentence closing statement to wrap up the podcast, thanking the expert and audience.
-                            """,
-                )
-                closing_chain = LLMChain(llm=self.host_llm, prompt=closing_prompt)
-                closing = self.generate_response(closing_chain, combined_input)
-                self.chat_history.append(f"<HOST{6}>{closing}</HOST{6}>")
+        # Add closing statement if needed
+        self.generate_next_script(True, True, article, i)
 
         return "\n\n".join(self.chat_history)
-    
+

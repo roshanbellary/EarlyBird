@@ -1,7 +1,7 @@
 from inference.rl_bandit import HybridLinUCBModel
 from retrieval.db.db_utils import DBUtils
 from inference.embed import Embedor
-from retrieval.merger import Article, Merger
+from backend.podcast.ml.retrieval.merger import Article, Merger
 
 import numpy as np
 
