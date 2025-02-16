@@ -1,5 +1,5 @@
 import json
-from retrieval.db.db_utils import DBUtils
+from .db.db_utils import DBUtils
 
 
 class Article:
