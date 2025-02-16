@@ -1,5 +1,4 @@
 from scraper import NewsScraperAgent
-from headline_generator import HeadlineGeneratorAgent
 from researcher import DeepResearchAgent
 from story_drafter import StoryDrafterAgent
 from script_generator import PodcastScriptGenerator
@@ -25,7 +24,6 @@ class NewsPodcastPipeline:
     ):
         self.scraper = NewsScraperAgent(perplexity_api_key)
         self.interest_classifier = InterestClassifierAgent(openai_api_key)
-        self.headline_generator = HeadlineGeneratorAgent(openai_api_key)
         self.researcher = DeepResearchAgent(perplexity_api_key)
         self.drafter = StoryDrafterAgent(openai_api_key)
         self.script_generator = PodcastScriptGenerator(mistral_api_key)
@@ -57,7 +55,7 @@ class NewsPodcastPipeline:
         print("Generated Topics:", topics)
         stories = []
         for topic in topics:
-            news_item = self.scraper.get_top_headlines(prompt=topic)
+            news_item = self.scraper.get_top_headlines(topic)
             print("Generated News Item:", news_item)
             news_item = self.parse_scraper_response(news_item['content'])
 
