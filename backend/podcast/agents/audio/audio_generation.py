@@ -67,7 +67,7 @@ class PodcastAudioGenerator:
         """
         # Split by numbered tags and process each section
         interaction_files = []
-        parts = re.findall(r"<(HOST|EXPERT)_\d+>\s*(.*?)\s*</\1>", script, re.DOTALL)
+        parts = re.findall(r"<(host|expert)(\d+)>\s*(.*?)\s*</\1\2>", script, re.DOTALL | re.IGNORECASE)
 
         if not parts:
             raise ValueError("No valid script sections found")
@@ -80,8 +80,8 @@ class PodcastAudioGenerator:
                 
                 # Process both host and expert for this interaction
                 for j in range(i, min(i+2, len(parts))):
-                    speaker, text = parts[j]
-                    speaker = speaker.lower().split('_')[0]  # Remove numbering
+                    speaker, number, text = parts[j]
+                    speaker = speaker.lower()  # Convert to lowercase
                     voice_id = self.SPEAKER_VOICES.get(speaker, self.SPEAKER_VOICES["host"])
                     mp3_path = self.text_to_speech_file(text, voice_id)
                     interaction_clips.append(mp3_path)
