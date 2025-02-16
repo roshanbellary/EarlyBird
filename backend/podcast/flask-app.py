@@ -5,6 +5,7 @@ from flask import Flask, request, send_from_directory, jsonify
 from flask_cors import CORS
 import logging
 from podcast import PodcastRunner
+from podcast.agents.pipeline import NewsPodcastPipeline
 from typing import Dict, Any
 import json
 import whisper
@@ -129,6 +130,7 @@ def get_response():
             return jsonify({"error": "No audio file part in the request"}), 400
         
         audio_file = request.files['audio']
+        file_path = request.form.get('file_path')
         if audio_file.filename == '':
             logger.error("No selected file")
             return jsonify({"error": "No selected file"}), 400
@@ -142,15 +144,16 @@ def get_response():
         result = model.transcribe(temp_audio_path)
         transcription = result["text"]
         logger.info(f"Transcription: {transcription}")
-        
+        logger.info(f"File path: {file_path}")
         # Call the response function to generate an expert response
-        expert_response = generate_expert_response(transcription)
-        logger.info(f"Expert response: {expert_response}")
+        pipeline = NewsPodcastPipeline()
+        interrupt_path = pipeline.user_ask_expert(question=transcription, filepath=file_path)
+        logger.info(f"Expert response: {interrupt_path}")
         
         # Clean up the temporary audio file
         os.remove(temp_audio_path)
         
-        return jsonify({"transcription": transcription, "response": expert_response}), 200
+        return jsonify({"response": interrupt_path}), 200
     except Exception as e:
         logger.error(f"Error processing audio file: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
