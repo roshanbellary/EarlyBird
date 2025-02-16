@@ -107,6 +107,36 @@ class PodcastAudioGenerator:
                     os.remove(clip)
             raise e
 
+    def generate_interrupt_response(self, interrupt_response: str, destination_dir: str) -> str:
+        """
+        Generates audio for an interrupt response and saves it to the specified directory.
+        
+        Args:
+            interrupt_response (str): The text to convert to speech
+            destination_dir (str): Directory where the audio file should be saved
+            
+        Returns:
+            str: Path to the generated audio file
+        """
+        # Ensure destination directory exists
+        os.makedirs(destination_dir, exist_ok=True)
+        
+        # Generate the audio using the host voice
+        voice_id = self.SPEAKER_VOICES["expert"]
+        temp_path = self.text_to_speech_file(interrupt_response, voice_id)
+        
+        # Create final filename and move to destination
+        final_path = os.path.join(destination_dir, f"interrupt_{uuid.uuid4()}.mp3")
+        
+        # Load and save the audio to the destination
+        audio = AudioSegment.from_mp3(temp_path)
+        audio.export(final_path, format="mp3")
+        
+        # Clean up temporary file
+        os.remove(temp_path)
+        
+        return final_path
+
 
 if __name__ == "__main__":
     # Example usage
