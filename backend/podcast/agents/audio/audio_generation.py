@@ -60,46 +60,49 @@ class PodcastAudioGenerator:
                     f.write(chunk)
         return temp_file_path
 
-    def generate_audio(self, script: str) -> str:
+    def generate_audio(self, script: str) -> list:
         """
         Generates audio from a script with XML-like tags.
-        Returns the path to the generated audio file.
+        Returns a list of paths to the generated audio files.
         """
-        # Create a unique filename for the final podcast
-        timestamp = uuid.uuid4()
-        output_file = os.path.join(self.audio_dir, f"podcast_audio.mp3")
-
-        # Split by tags and process each section
-        clips = []
-        parts = re.findall(r"<(HOST|EXPERT)>\s*(.*?)\s*</\1>", script, re.DOTALL)
+        # Split by numbered tags and process each section
+        interaction_files = []
+        parts = re.findall(r"<(host|expert)(\d+)>\s*(.*?)\s*</\1\2>", script, re.DOTALL | re.IGNORECASE)
 
         if not parts:
             raise ValueError("No valid script sections found")
 
         try:
-            for speaker, text in parts:
-                speaker = speaker.lower()
-                # Get the voice ID for the speaker, or default to host if missing
-                voice_id = self.SPEAKER_VOICES.get(speaker, self.SPEAKER_VOICES["host"])
-                print(
-                    f"Converting for {speaker}: {text[:100]}..."
-                )  # Print first 100 chars
-                mp3_path = self.text_to_speech_file(text, voice_id)
-                clips.append(mp3_path)
+            interaction_count = 0
+            for i in range(0, len(parts), 2):  # Process pairs of host/expert
+                interaction_count += 1
+                interaction_clips = []
+                
+                # Process both host and expert for this interaction
+                for j in range(i, min(i+2, len(parts))):
+                    speaker, number, text = parts[j]
+                    speaker = speaker.lower()  # Convert to lowercase
+                    voice_id = self.SPEAKER_VOICES.get(speaker, self.SPEAKER_VOICES["host"])
+                    mp3_path = self.text_to_speech_file(text, voice_id)
+                    interaction_clips.append(mp3_path)
 
-            # Combine all clips into one final MP3
-            final_audio = AudioSegment.empty()
-            for clip in clips:
-                final_audio += AudioSegment.from_mp3(clip)
-                os.remove(clip)  # Clean up temporary files
+                # Combine interaction clips
+                final_audio = AudioSegment.empty()
+                for clip in interaction_clips:
+                    final_audio += AudioSegment.from_mp3(clip)
+                    os.remove(clip)  # Clean up temporary files
 
-            final_audio.export(output_file, format="mp3")
-            print(f"Merged podcast saved to {output_file}")
-            return output_file
+                # Save individual interaction file
+                output_file = os.path.join(self.audio_dir, f"interaction_{interaction_count}.mp3")
+                final_audio.export(output_file, format="mp3")
+                interaction_files.append(output_file)
+                print(f"Saved interaction {interaction_count} to {output_file}")
+
+            return interaction_files
 
         except Exception as e:
             # Clean up any temporary files in case of error
-            for clip in clips:
+            for clip in interaction_clips:
                 if os.path.exists(clip):
                     os.remove(clip)
             raise e
