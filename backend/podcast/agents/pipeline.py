@@ -26,6 +26,7 @@ class NewsPodcastPipeline:
         self.interest_classifier = InterestClassifierAgent(openai_api_key)
         self.researcher = DeepResearchAgent(perplexity_api_key)
         self.drafter = StoryDrafterAgent(openai_api_key)
+        self.stories = []
     def parse_topic_classifier(self, response: str) -> List[str]:
         topics = re.findall(r"<TOPIC>(.*?)</TOPIC>", response, re.DOTALL)
         return topics
@@ -51,7 +52,6 @@ class NewsPodcastPipeline:
         topics = self.parse_topic_classifier(topic_classifier)
         topics = topics[0:min(len(topics), 3)]
         print("Generated Topics:", topics)
-        stories = []
         script = ''
         for topic in topics:
             news_item = self.scraper.get_top_headlines(topic)
@@ -64,14 +64,14 @@ class NewsPodcastPipeline:
 
             print(f"Drafting story for {topic}...")
             drafted_stories = self.drafter.draft_stories(researched_stories)
-            stories.append({"story": drafted_stories, "topic": topic})
-            print("Stories:", stories)
+            self.stories.append({"story": drafted_stories, "topic": topic})
+            print("Stories:", self.stories)
 
             print(f"Generating script for {topic}...")
 
             mistral_api_key=os.getenv("MISTRAL_API_KEY")
             self.script_generator = PodcastScriptGenerator(mistral_api_key)
-            story = self.script_generator.generate_script(stories)     
+            story = self.script_generator.generate_script(self.stories)     
             script += story   
             print('\n' + script)
 

@@ -23,12 +23,7 @@ class PodcastScriptGenerator:
             openai_api_key=mistral_api_key,
         )
 
-        # Use window memory to limit context size
-        self.memory = ConversationBufferWindowMemory(
-            k=4,  # Only keep last 2 exchanges
-            input_key="combined_input",
-            memory_key="chat_history",
-        )
+        self.chat_history = []
 
         # Updated host prompt
         self.host_prompt = PromptTemplate(
@@ -82,14 +77,12 @@ class PodcastScriptGenerator:
         self.host_chain = LLMChain(
             llm=self.host_llm,
             prompt=self.host_prompt,
-            memory=self.memory,
             verbose=False,
         )
 
         self.expert_chain = LLMChain(
             llm=self.expert_llm,
             prompt=self.expert_prompt,
-            memory=self.memory,
             verbose=False,
         )
 
@@ -99,10 +92,9 @@ class PodcastScriptGenerator:
         """
         # Add small delay to prevent rate limiting
         time.sleep(1)
-        return chain.run(combined_input=combined_input)
+        return chain.run(combined_input=combined_input, chat_history=self.chat_history)
 
     def generate_script(self, content: List[Dict]) -> str:
-        script_segments = []
         print(content)
         story_text = content[-1]["story"][0]['draft']
 
@@ -110,8 +102,8 @@ class PodcastScriptGenerator:
             if j == 0:
                 if len(content) == 1:
                     combined_input = f"""
-                        Give a brief 1 sentence introduction to the podcast welcoming the host and the audience. 
-                        Then, introduce the attached story. YOU MUST FOLLOW THIS INTRODUCTION FORMAT.
+                        You must give a brief 1 sentence introduction to the podcast welcoming the host and the audience. 
+                        Then, give a 1 sentence introduction to the attached story in a headline format. YOU MUST FOLLOW THIS INTRODUCTION FORMAT.
                         Here is the story: {story_text}
                     """
                 else:
@@ -127,13 +119,14 @@ class PodcastScriptGenerator:
 
             # print(combined_input)
 
+            i = 2 * (len(content) - 1) + j
             # Host's introduction/response
             host_intro = self.generate_response(self.host_chain, combined_input)
-            script_segments.append(f"<HOST>{host_intro}</HOST>")
+            self.chat_history.append(f"<HOST{i}>{host_intro}</HOST{i}>")
 
             # Expert's response using the story text
             expert_response = self.generate_response(self.expert_chain, story_text)
-            script_segments.append(f"<EXPERT>{expert_response}</EXPERT>")
+            self.chat_history.append(f"<EXPERT{i}>{expert_response}</EXPERT{i}>")
 
         if len(content) == 3:
             # Add final closing statement
@@ -146,6 +139,6 @@ class PodcastScriptGenerator:
                 )
                 closing_chain = LLMChain(llm=self.host_llm, prompt=closing_prompt)
                 closing = self.generate_response(closing_chain, combined_input)
-                script_segments.append(f"<HOST>{closing}</HOST>")
+                self.chat_history.append(f"<HOST{6}>{closing}</HOST{6}>")
 
-        return "\n\n".join(script_segments)
+        return "\n\n".join(self.chat_history)
