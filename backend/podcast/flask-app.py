@@ -5,12 +5,12 @@ from flask import Flask, request, send_from_directory, jsonify
 from flask_cors import CORS
 import logging
 from podcast import PodcastRunner
-from agents.pipeline import NewsPodcastPipeline
-from agents.pipeline import NewsPodcastPipeline
+from backend.podcast.agents.pipeline import NewsPodcastPipeline
+from backend.podcast.agents.pipeline import NewsPodcastPipeline
 from typing import Dict, Any
 import json
 
-from global_instances import rl_model, graph
+from podcast.global_instances import rl_model, graph
 import whisper
 
 # Configure logging
@@ -146,22 +146,44 @@ def get_all_transcript_files():
         return jsonify({"error": "Internal server error"}), 500
 
 @app.route("/api/graph_init", methods=["GET"])
-def get_3d_graph(mode, selected_point=None):
-    # if mode == 'init':
-    #     graph.generate_init_nodes()
-    #     graph.update_interest_scores()
-    # elif mode == 'update':
-    #     graph.update_rl_model(selected_point[0], selected_point[1], selected_point[2])
-    #     graph.update_interest_scores()
+def graph_init():
+    e = graph.generate_init_nodes()
+    print('embedding', e)
+    graph.update_interest_scores()
 
-    # nodes = []
-    # for i in range(len(graph.nodes)):
-    #     nodes.append({'id': i, 'position': graph.nodes[i].embedding_3d})
-    # print(nodes)
-    nodes = [{'id': 1, 'position': [0, 0, 0]}]
+    nodes = []
+    categories = []
+    for i in range(len(graph.nodes)):
+        nodes.append({'id': i, 'position': graph.nodes[i].embedding_3d, 'label': '', 'interest_score': 0})
+        if graph.nodes[i].section not in categories:
+            categories.append(graph.nodes[i].section)
+            nodes[i]['label'] = graph.nodes[i].section
 
+    print('nodes', nodes)
     # Return JSON in a format convenient for your frontend
-    return jsonify({"nodes": nodes, "edges": []}), 200
+    return jsonify({"nodes": nodes, "edges": []})
+
+@app.route("/api/graph_update/<x>/<y>/<z>", methods=["GET"])
+def graph_update(x, y, z):
+    graph.update_rl_model(float(x), float(y), float(z))
+    print('updated rl')
+    graph.update_interest_scores()
+    print('updated interest scores')
+    print(graph.nodes)
+
+    nodes = []
+    categories = []
+    for i in range(len(graph.nodes)):
+        nodes.append({'id': i, 'position': graph.nodes[i].embedding_3d, 'label': '', 'interest_score': graph.nodes[i].interest_score})
+        if graph.nodes[i].section not in categories:
+            categories.append(graph.nodes[i].section)
+            nodes[i]['label'] = graph.nodes[i].section
+    
+    print('nodes', nodes)
+    print('finished updating')
+    # Return JSON in a format convenient for your frontend
+    return jsonify({"nodes": nodes, "edges": []})
+
 
 @app.route("/interrupt", methods=["POST"])
 def get_response():

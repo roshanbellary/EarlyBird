@@ -1,7 +1,8 @@
 from sklearn.manifold import TSNE
-from ml.retrieval.merger import Merger
-from ml.inference.rl_bandit import HybridLinUCBModel
+from podcast.ml.retrieval.merger import Merger
+from podcast.ml.inference.rl_bandit import HybridLinUCBModel
 import numpy as np
+import math
 
 class InterestGraph:
 
@@ -15,22 +16,18 @@ class InterestGraph:
             embeddings.append(node.embedding)
         tsne = TSNE(n_components=3, perplexity=30, learning_rate=200, n_iter=1000)
         embeddings_3d = tsne.fit_transform(np.array(embeddings))
-
-        for embedding in embeddings_3d:
-            node.embedding_3d = embedding
-
-    def interest_score_function(x, n, alpha=0.5):
-        numerator = math.exp(-alpha * (x - 1)) - math.exp(-alpha * (n - 1))
-        denominator = 1 - math.exp(-alpha * (n - 1))
-        return numerator / denominator
+        for i in range(len(embeddings_3d)):
+            self.nodes[i].embedding_3d = embeddings_3d[i].tolist()
+        
+        return embeddings_3d
 
     def update_interest_scores(self):
-        n = self.rl_model.num_articles
+        n = self.rl_model.n_articles
         top_articles = self.rl_model.return_next_articles(n, update_state=False)
         
         for x in range(1, n + 1):
-            fx = decaying_function(x, n)
-            top_articles[x - 1].interest_score = fx
+            top_articles[x - 1].interest_score = 1 / x
+
     
     def update_rl_model(self, x, y, z):
         closest_article = self.nodes[0]
@@ -44,26 +41,9 @@ class InterestGraph:
         
         category = closest_article.section
         delta = 75
-        for node in self.nodes:
-            if node.section == category:
-                self.rl_model.feedback(node, delta)
-
-# if __name__ == "__main__":  
-#     url = "backend/podcast/ml/retrieval/db/"
-#     merger = Merger(db_path = url)
-#     articles = merger.merge()
-
-#     rl_model = HybridLinUCBModel(articles)
-#     graph = InterestGraph(rl_model)
-#     embeddings = []
-#     for node in graph.nodes:
-#         embeddings.append(node.embedding)
-#     tsne = TSNE(n_components=3, perplexity=30, learning_rate=200, n_iter=1000)
-#     # print(len(embeddings), len(embeddings[0]))
-#     embeddings_3d = tsne.fit_transform(np.array(embeddings))
-#     print(embeddings_3d.shape)
-    
-
+        for i in range(len(self.nodes)):
+            if self.nodes[i].section == category:
+                self.rl_model.feedback(i, delta)
 
 
 

@@ -5,7 +5,7 @@ from typing import Dict, List
 import os
 import time
 
-from ml.retrieval.merger import Article
+from backend.podcast.ml.retrieval.merger import Article
 
 class PodcastScriptGenerator:
     def __init__(self, mistral_api_key: str):

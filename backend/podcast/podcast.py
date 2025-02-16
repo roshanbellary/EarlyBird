@@ -4,15 +4,15 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 print(os.getcwd())
-from agents.audio.audio_generation import PodcastAudioGenerator
-from agents.pipeline import NewsPodcastPipeline
+from backend.podcast.agents.audio.audio_generation import PodcastAudioGenerator
+from backend.podcast.agents.pipeline import NewsPodcastPipeline
 
-from agents.audio.audio_generation import PodcastAudioGenerator
-from agents.pipeline import NewsPodcastPipeline
+from backend.podcast.agents.audio.audio_generation import PodcastAudioGenerator
+from backend.podcast.agents.pipeline import NewsPodcastPipeline
 
 print(os.getcwd())
-from agents.audio.audio_generation import PodcastAudioGenerator
-from agents.pipeline import NewsPodcastPipeline
+from backend.podcast.agents.audio.audio_generation import PodcastAudioGenerator
+from backend.podcast.agents.pipeline import NewsPodcastPipeline
 
 import json
 

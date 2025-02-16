@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 import numpy as np
-from ml.retrieval.merger import Article
+from backend.podcast.ml.retrieval.merger import Article
 
 class HybridLinUCBModel:
     """

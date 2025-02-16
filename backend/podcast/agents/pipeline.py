@@ -16,8 +16,8 @@ import re
 import json
 from dotenv import load_dotenv
 
-from ml.inference.rl_bandit import HybridLinUCBModel
-from ml.retrieval.merger import Article, Merger
+from backend.podcast.ml.inference.rl_bandit import HybridLinUCBModel
+from backend.podcast.ml.retrieval.merger import Article, Merger
 # project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # sys.path.insert(0, project_root)
 
