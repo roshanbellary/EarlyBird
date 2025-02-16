@@ -32,6 +32,24 @@ class Article:
     # allow equality
     def __eq__(self, other):
         return self.id == other.id
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "content": self.content,
+            "embedding": self.embedding,
+            "all_data": self.all_data,
+            "lead_paragraph": self.lead_paragraph,
+            "abstract": self.abstract,
+            "snippet": self.snippet,
+            "keywords": self.keywords,
+            "url": self.url,
+            "section": self.section,
+            "date": self.date,
+            "_id": self._id,
+            "interest_score": self.interest_score,
+        }
      
 class Merger:
     def __init__(self, db_path: str):
@@ -99,6 +117,6 @@ class Merger:
 if __name__ == "__main__":
     merger = Merger(db_path="direct/retrieval/db/")
 
-                
+
 
 

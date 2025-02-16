@@ -11,6 +11,11 @@ class PodcastScriptGenerator:
     def __init__(self, mistral_api_key: str):
         self._initialize_llms(mistral_api_key)
         self.chat_history = []
+        self.return_json = {
+            "script": [
+
+            ]
+        }
         self._initialize_prompts()
         self._initialize_chains()
 
@@ -41,7 +46,8 @@ class PodcastScriptGenerator:
                 "abstract",
                 "combined_input",
                 "chat_history",
-                "role_instructions"
+                "role_instructions",
+                "research"
             ],
             template="""
             You are a charismatic news anchor host discussing an interesting story with an expert panelist in a short format. You are part of a morning
@@ -85,6 +91,10 @@ class PodcastScriptGenerator:
             {full_story}
             </FULL_STORY>
 
+            <OTHER_PERSPECTIVES>
+            {research}
+            </OTHER_PERSPECTIVES>
+
 
             <PAST_CONVERSATION>
             {chat_history}
@@ -98,7 +108,8 @@ class PodcastScriptGenerator:
                 "abstract",
                 "full_story",
                 "chat_history",
-                "role_instructions"
+                "role_instructions",
+                "research"
             ],
             template="""
             You are a knowledgeable and charismatic expert, Dr. Bird, discussing an interesting story with a news anchor in a short format. You are part of a morning
@@ -121,7 +132,7 @@ class PodcastScriptGenerator:
             YOU GET 2 MESSAGES (between the host's first and 2nd message, and between the host's 2nd and closing message). USE THEM WISELY. YOU GET ONE INTRO MESSAGE, ONE INTERMEDDIATE MESSAGE AND ONE CLOSING MESSAGE. USE THEM WISELY. Use
             the past messages to inform your response and figure out which message you are on.
 
-            ONLY INCLUDE YOUR RESPONSE AND NOTHING ELSE. OU MUST LIMIT RESPONSES TO 1 SENTENCE IN MOST cases and 2 if you
+            ONLY INCLUDE YOUR RESPONSE AND NOTHING ELSE. YOU MUST LIMIT RESPONSES TO 1 SENTENCE IN MOST cases and 2 if you
             really need more space. DO NOT PUT 'Dr.Bird: ' 
             AT THE BEGINNING OF THE LINE. DO NOT REENACT THE NEWS ANCHOR. YOU ARE THE EXPERT AND ONLY THE EXPERT.
             DO NOT NAME THE PODCAST. THIS IS YOUR ONE AND ONLY SHOT IF YOU BREAK ONE OF THESE RULES I WILL CUT OFF MY ARM.
@@ -143,12 +154,68 @@ class PodcastScriptGenerator:
             {full_story}
             </FULL_STORY>
 
+            <OTHER_PERSPECTIVES>
+            {research}
+            </OTHER_PERSPECTIVES>
 
             <PAST_CONVERSATION>
             {chat_history}
             </PAST_CONVERSATION>
             """,
         )
+
+        self.question_prompt = PromptTemplate(
+            input_variables=[
+                "headline",
+                "abstract",
+                "full_story",
+                "chat_history",
+                "question",
+                "research",
+            ],
+            template="""
+            You are a knowledgeble and charismatic expert, Dr. Bird discussing an interesting story with a news anchor in a short format. You are part of a morning
+            news application, where the user can listen to the news while getting ready in the morning.
+
+            The user has interrupted you asking a question while you were discussing the below story with another person on 
+             the news show. Answer the question in a way that is informative and concise. MAKE SURE YOUR RESPONSE IS 1-2 SENTENCES.
+            IT SHOULD NOT BE MORE THAN 2 SENTENCES.
+
+            Answer the quesiton in a polite yet informative way. 
+
+            ONLY INCUDE YOUR RESPONSE AND NOTHING ELSE. JUST THE RAW RESPONSE TO THE USER.
+            If the user is trying to skip or go to the next article, return skip and NOTHING ELSE
+            If the user's question is not a question or not something response to (micrphone error or random noise), return skip and NOTHING ELSE
+            If the user is trying to repeat the current article, return repeat and NOTHING ELSE
+            Otherwise answer the question and NOTHING ELSE.
+
+            <HEADLINE>
+            {headline}
+            </HEADLINE>
+
+            <ABSTRACT>
+            {abstract}
+            </ABSTRACT>
+
+            <FULL_STORY>
+            {full_story}
+            </FULL_STORY>)}}
+
+            <OTHER_PERSPECTIVES>
+            {research}
+            </OTHER_PERSPECTIVES>
+
+            <PAST_CONVERSATION>
+            {chat_history}
+            </PAST_CONVERSATION>
+
+            <QUESTION>
+            {question}
+            </QUESTION>)}}
+
+            """
+        )
+
 
     def _initialize_chains(self):
         self.host_chain = LLMChain(
@@ -163,21 +230,40 @@ class PodcastScriptGenerator:
             verbose=False,
         )
 
-    def generate_response(self, chain, article: Article, role_instructions: str) -> str:
+        self.question_chain = LLMChain(
+            llm=self.expert_llm,
+            prompt=self.question_prompt,
+            verbose=False,
+        )
+
+    def generate_response(self, chain, article: Article, role_instructions: str, research: str = "", question=False) -> str:
         """
         Generate a response with basic rate limiting
         """
-        # Add small delay to prevent rate limiting
-        time.sleep(0.3)
-        return chain.run(
-            headline=article.title,
-            abstract=article.abstract,
-            full_story=article.content, 
-            chat_history="\n".join(self.chat_history),
-            role_instructions=role_instructions
-        )
 
-    def generate_next_script(self, is_host: bool, is_last: bool, story: Article, index: int, include_first_hello: bool = False) -> str:
+        if(question):
+            time.sleep(0.2)
+            return chain.run(
+                headline=article.title,
+                abstract=article.abstract,
+                full_story=article.content, 
+                chat_history="\n".join(self.chat_history),
+                question=role_instructions,
+                research=research
+            )
+        else:
+            # Add small delay to prevent rate limiting
+            time.sleep(0.2)
+            return chain.run(
+                headline=article.title,
+                abstract=article.abstract,
+                full_story=article.content, 
+                chat_history="\n".join(self.chat_history),
+                role_instructions=role_instructions,
+                research=research
+            )
+
+    def generate_next_script(self, is_host: bool, is_last: bool, story: Article, research: str, index: int, include_first_hello: bool = False) -> str:
         """
         Generate the next part of the podcast script.
         
@@ -213,14 +299,31 @@ class PodcastScriptGenerator:
             else:
                 combined_input = f""
 
-            response = self.generate_response(self.host_chain, story, combined_input)
+            response = self.generate_response(self.host_chain, story, combined_input, research)
                 
             self.chat_history.append(f"<HOST{index}>{response}</HOST{index}>")
+            self.return_json["script"].append({"role": "host", "content": response})
         else:
-            response = self.generate_response(self.expert_chain, story, "")
+            response = self.generate_response(self.expert_chain, story, "", research)
             self.chat_history.append(f"<EXPERT{index}>{response}</EXPERT{index}>")
+            self.return_json["script"].append({"role": "expert", "content": response})
             
         return response
+
+    def answer_question(self, story: Article, research: str, question: str) -> str:
+        """
+        Answer a question about the story.
+        
+        Args:
+            story_text: The story content to discuss
+            question: The question to answer
+        """
+        response = self.generate_response(self.question_chain, story, question, research, question=True)
+        self.chat_history.append(f"<USER>{question}</USER>")
+        self.chat_history.append(f"<EXPERT>{response}</EXPERT>")
+
+        return response
+       
 
     def generate_script(self, article: Article, research: str) -> str:
         """Original script generation function that uses generate_next_script"""
@@ -228,13 +331,13 @@ class PodcastScriptGenerator:
         iterations = 2
 
         for j in range(iterations):
-            self.generate_next_script(True, False, article, i)  # Generate host's part
+            self.generate_next_script(True, False, article, research, i)  # Generate host's part
             
-            self.generate_next_script(False, False, article, i) # Generate expert's part
+            self.generate_next_script(False, False, article, research, i) # Generate expert's part
             i += 1
 
         # Add closing statement if needed
-        self.generate_next_script(True, True, article, i)
+        self.generate_next_script(True, True, article, research, i)
 
-        return "\n\n".join(self.chat_history)
+        return self.return_json
 

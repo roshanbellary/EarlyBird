@@ -1,5 +1,6 @@
 import sys 
 import os
+import threading
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from flask import Flask, request, send_from_directory, jsonify
 from flask_cors import CORS
@@ -7,6 +8,9 @@ import logging
 from podcast import PodcastRunner
 from typing import Dict, Any
 import json
+from flask_socketio import SocketIO, emit
+
+from backend.podcast.AppData import AppData
 # Configure logging
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -23,12 +27,59 @@ class Config:
 app = Flask(__name__)
 CORS(app)
 app.config.from_object(Config)
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+def emit_data(socketio, new_data) :
+    " EMIT NEW DATA TO CLIENT "
+    socketio.emit('my_response', {'data': new_data})
+
+
+
+AppData.data["emit_function"] = emit_data
+AppData.data["socketio"] = socketio
+
+def emit_new_data():
+    article_data = AppData.data["Articles"]
+    
+    # make deep copy, and replace each article["article_data"] with its to_dict()
+    new_data = [
+        {
+            **article,
+        }
+        for article in article_data
+    ]
+
+    for article in new_data:
+        article["article_data"] = article["article_data"].to_dict()
+    
+    # emit new data to client
+    emit_data(AppData.data["socketio"], {
+        "message": "new_article_info",
+        "data": new_data
+    })
+
+AppData.data["emit_articles"] = emit_new_data
+
+def continously_emit(socketio):
+    """ Continuously emit data to the client every 5 seconds """
+    while True:
+        pass
+
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+    AppData.data["emit_function"](
+            AppData.data["socketio"]
+            , {"message:": "Connected to server"}
+        )
+
 
 @app.route("/", methods=["GET"])
 def build():
     """Health check endpoint."""
     return jsonify({"message": "Podcast generation service is running"})
 
+runner  = PodcastRunner()
 @app.route("/generate", methods=["POST"])  # Ensure it's POST method
 def generate():
     """Handles user request, generates a podcast, and returns the file URL."""
@@ -43,24 +94,30 @@ def generate():
         # if not interests:
         #     logger.error(f"Missing interests: {interests}")
         #     return jsonify({"error": "Missing interests"}), 400
-        
-        runner = PodcastRunner()
-        logger.info("Running the podcast runner")
-        result = runner.run()
-        logger.info(f"PodcastRunner result: {result}")  # Log the full result to inspect it
-        
-        if result is None or not isinstance(result, Dict):
-            logger.error(f"Invalid response from podcast runner: {result}")
-            return jsonify({"error": "Invalid response from podcast runner"}), 500
 
-        audio_path = result.get("audio_path")
-        podcast_dir = result.get("podcast_dir")
-        transcript_path = result.get("transcript_path")
+        # run PodcastRunner on a new thread
+        thread = threading.Thread(target=runner.run)
+        thread.daemon = True  # Allow the thread to exit when the main program exits
+        thread.start()
+
+        return jsonify({"message": "Podcast generation started"}), 200
+
+        # logger.info("Running the podcast runner")
+        # result = runner.run()
+        # logger.info(f"PodcastRunner result: {result}")  # Log the full result to inspect it
         
-        for audio_path_instance in audio_path:
-            if audio_path_instance is None or not os.path.exists(audio_path_instance):
-                logger.error(f"Audio file not found at path: {audio_path_instance}")
-                return jsonify({"error": "Podcast generation failed"}), 500
+        # if result is None or not isinstance(result, Dict):
+            # logger.error(f"Invalid response from podcast runner: {result}")
+            # return jsonify({"error": "Invalid response from podcast runner"}), 500
+
+        # audio_path = result.get("audio_path")
+        # podcast_dir = result.get("podcast_dir")
+        # transcript_path = result.get("transcript_path")
+        
+        # for audio_path_instance in audio_path:
+            # if audio_path_instance is None or not os.path.exists(audio_path_instance):
+                # logger.error(f"Audio file not found at path: {audio_path_instance}")
+                # return jsonify({"error": "Podcast generation failed"}), 500
 
     except Exception as e:
         logger.exception(f"Error in /generate route: {str(e)}")
@@ -77,6 +134,38 @@ def generate():
         logger.exception(f"Error serving file {filenames}: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
+
+@app.route("/generate_next", methods=["POST"])  # Ensure it's POST method
+def generate_next():
+    """Handles user request, generates a podcast, and returns the file URL."""
+    try:
+        next_id = request.json.get("next_id")
+        print(f"next_id: {next_id}")
+
+        thread = threading.Thread(target=runner.run_next, args=(next_id,))
+        thread.daemon = True  # Allow the thread to exit when the main program exits
+        thread.start()
+
+        return jsonify({"message": "Podcast generation started"}), 200
+
+    except Exception as e:
+        logger.exception(f"Error in /generate route: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route("/generate_answer", methods=["POST"])  # Ensure it's POST method
+def generate_answer():
+    """Handles user request, generates a podcast, and returns the file URL."""
+    try:
+        index = request.json.get("index")
+        question = request.json.get("question")
+
+        response = runner.answer_question(index, question)
+
+        return {"message": response}, 200
+
+    except Exception as e:
+        logger.exception(f"Error in /generate route: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route("/download/<filename>/<num>", methods=["GET"])
 def download(filename, num = 1):
@@ -126,7 +215,7 @@ def handle_error(error):
     return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == "__main__":
-    app.run(
+    socketio.run(app,
         host=app.config['HOST'],
         port=app.config['PORT'],
         debug=True

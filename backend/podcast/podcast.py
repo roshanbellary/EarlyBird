@@ -7,9 +7,25 @@ print(os.getcwd())
 from backend.podcast.agents.audio.audio_generation import PodcastAudioGenerator
 from backend.podcast.agents.pipeline import NewsPodcastPipeline
 
+from backend.podcast.AppData import AppData
+
 import json
 
 load_dotenv()  # Load environment variables from .env file
+
+import logging
+
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+
+# openai turn off logging
+logging.getLogger("openai").setLevel(logging.WARNING)
+
+# httpcore turn off logging
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+
+# hide pydub
+logging.getLogger("pydub").setLevel(logging.WARNING)
 
 class PodcastRunner:
     def __init__(self):
@@ -53,9 +69,9 @@ class PodcastRunner:
         print(f"Transcript saved to: {transcript_path}")
         
         # Generate the audio
-        print("Generating audio...")
-        audio_path = self.audio_generator.generate_audio(script)
-        print(f"Podcast saved to: {audio_path}")
+        # print("Generating audio...")
+        # audio_path = self.audio_generator.generate_audio(script)
+        # print(f"Podcast saved to: {audio_path}")
 
         json_file_path = os.path.join(
             self.project_root,
@@ -76,7 +92,7 @@ class PodcastRunner:
             data = json.load(file)
 
         data["metadata"].append({
-            "file_path": audio_path, 
+            # "file_path": audio_path, 
             "datetime": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "stories": self.pipeline.stories
         })
@@ -86,9 +102,18 @@ class PodcastRunner:
         
         return {
             'transcript_path': transcript_path,
-            'audio_path': audio_path,
+            # 'audio_path': audio_path,
             'podcast_dir': self.podcast_dir
         }
+    
+    def run_next(self, index: int):
+        script = self.pipeline.generate_next_part_podcast(index)
+        print("Script generated, saving transcript...")
+    
+    def answer_question(self, index: int, question: str):
+        answer = self.pipeline.answer_question(question, index)
+        print("Answer generated")
+        return answer
 
     def generate_from_transcript(self, transcript_path: str):
         """Generate audio from an existing transcript file."""
