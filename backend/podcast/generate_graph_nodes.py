@@ -26,7 +26,7 @@ class InterestGraph:
         top_articles = self.rl_model.return_next_articles(n, update_state=False)
         
         for x in range(1, n + 1):
-            top_articles[x - 1].interest_score = 1 / (x ** 2)
+            top_articles[x - 1].interest_score = 1 - (1 / x) ** 1/2
 
     
     def update_rl_model(self, x, y, z):
