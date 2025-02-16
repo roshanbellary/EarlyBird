@@ -142,3 +142,4 @@ class PodcastScriptGenerator:
                 self.chat_history.append(f"<HOST{6}>{closing}</HOST{6}>")
 
         return "\n\n".join(self.chat_history)
+    

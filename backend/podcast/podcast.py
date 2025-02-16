@@ -54,7 +54,21 @@ class PodcastRunner:
         audio_path = self.audio_generator.generate_audio(script)
         print(f"Podcast saved to: {audio_path}")
 
-        json_file_path = "finished_podcasts/podcast_metadata.json"
+        json_file_path = os.path.join(
+            self.project_root,
+            'backend',
+            'podcast',
+            'finished_podcasts',
+            'podcast_metadata.json'
+        )
+        
+        # Create metadata file if it doesn't exist
+        if not os.path.exists(json_file_path):
+            os.makedirs(os.path.dirname(json_file_path), exist_ok=True)
+            with open(json_file_path, "w") as file:
+                json.dump({"metadata": []}, file)
+
+        # Read existing data
         with open(json_file_path, "r") as file:
             data = json.load(file)
 

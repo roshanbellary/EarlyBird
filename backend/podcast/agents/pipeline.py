@@ -3,6 +3,7 @@ from .researcher import DeepResearchAgent
 from .story_drafter import StoryDrafterAgent
 from .script_generator import PodcastScriptGenerator
 from .interest_classifier import InterestClassifierAgent
+from .audio.audio_generation import PodcastAudioGenerator
 from langchain.agents import Tool, AgentExecutor, create_react_agent
 from langchain_community.chat_models import ChatOpenAI
 from langchain.tools import BaseTool
@@ -80,6 +81,30 @@ class NewsPodcastPipeline:
         return script
         # print("Generated Podcast Scripts:", result)
         # return result
+    
+    # filepath- current audio file playing
+    def user_ask_expert(question: str, filepath: str) -> str:
+        json_file_path = "finished_podcasts/podcast_metadata.json"
+        with open(json_file_path, "r") as file:
+            data = json.load(file)
+
+        i = int(filepath[filepath.rfind('.mp3') - 1])
+        for podcast in data["metadata"]:
+            if filepath in podcast["file_path"]:
+                stories = podcast["stories"]
+                break
+
+        mistral_api_key=os.getenv("MISTRAL_API_KEY")
+        script_generator = PodcastScriptGenerator(mistral_api_key)
+        script_generator.chat_history.append(f"<HOST{i}>{question}</HOST{i}>")
+        ans = script_generator.generate_response(script_generator.expert_chain, stories[i / 2]["story"][0]['draft'])
+
+        audio_generator = PodcastAudioGenerator()
+        interrupt_path = filepath[:filepath.rfind('\\')] + '\\' + 'podcast_interrupt_' + str(i) + '.mp3'
+        audio_generator.generate_interrupt_response(ans, interrupt_path)
+        return interrupt_path
+
+
 
 if __name__ == "__main__":
     # Initialize the pipeline
