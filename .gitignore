@@ -62,6 +62,7 @@ backend/podcast/ml/retrieval/db/content[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]
 backend/podcast/ml/retrieval/db/content[0-9]-[0-9][0-9][0-9][0-9]*.json
 backend/podcast/ml/retrieval/db/content.json
 backend/podcast/ml/retrieval/db/vector.json
+direct/
 
 #ignore the pocasts
 backend/podcast/finished_podcasts/

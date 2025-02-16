@@ -1,6 +1,8 @@
+import sys 
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from flask import Flask, request, send_from_directory, jsonify
 from flask_cors import CORS
-import os
 import logging
 from podcast import PodcastRunner
 from typing import Dict, Any
@@ -31,16 +33,16 @@ def build():
 def generate():
     """Handles user request, generates a podcast, and returns the file URL."""
     try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "Invalid JSON data"}), 400
+        # data = request.get_json()
+        # if not data:
+        #     return jsonify({"error": "Invalid JSON data"}), 400
 
-        interests = data.get("interests", "")
-        logger.info(f"Received interests: {interests}")  # Log interests to see them
+        # interests = data.get("interests", "")
+        # logger.info(f"Received interests: {interests}")  # Log interests to see them
 
-        if not interests:
-            logger.error(f"Missing interests: {interests}")
-            return jsonify({"error": "Missing interests"}), 400
+        # if not interests:
+        #     logger.error(f"Missing interests: {interests}")
+        #     return jsonify({"error": "Missing interests"}), 400
         
         runner = PodcastRunner()
         logger.info("Running the podcast runner")
@@ -54,10 +56,11 @@ def generate():
         audio_path = result.get("audio_path")
         podcast_dir = result.get("podcast_dir")
         transcript_path = result.get("transcript_path")
-
-        if audio_path is None or not os.path.exists(audio_path):
-            logger.error(f"Audio file not found at path: {audio_path}")
-            return jsonify({"error": "Podcast generation failed"}), 500
+        
+        for audio_path_instance in audio_path:
+            if audio_path_instance is None or not os.path.exists(audio_path_instance):
+                logger.error(f"Audio file not found at path: {audio_path_instance}")
+                return jsonify({"error": "Podcast generation failed"}), 500
 
     except Exception as e:
         logger.exception(f"Error in /generate route: {str(e)}")
@@ -65,17 +68,17 @@ def generate():
 
     try:
         if audio_path:  # Ensure audio_path is not None
-            filename = os.path.basename(audio_path)
-            return jsonify({"file_url": f"{filename}", "podcast_dir": podcast_dir, "transcript_path": transcript_path})
+            filenames = os.path.basename(podcast_dir)
+            return jsonify({"file_urls": filenames, "podcast_dir": podcast_dir, "transcript_path": transcript_path}), 200
         else:
             logger.error("Audio path is not set.")
             return jsonify({"error": "Internal server error"}), 500
     except Exception as e:
-        logger.exception(f"Error serving file {filename}: {str(e)}")
+        logger.exception(f"Error serving file {filenames}: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
 
-@app.route("/download/<filename>", methods=["GET"])
+@app.route("/download/<filename>/<num>", methods=["GET"])
 def download(filename, num = 1):
     """Serves the generated MP3 file from the podcast directory."""
     try:
@@ -84,32 +87,20 @@ def download(filename, num = 1):
         if not os.path.exists(podcast_dir):
             logger.error(f"Podcast directory not found: {podcast_dir}")
             return jsonify({"error": "Podcast directory not found"}), 500
-
-        # Get the latest podcast directory
-        try:
-            latest_podcast_dir = sorted(
-                [d for d in os.listdir(podcast_dir) if os.path.isdir(os.path.join(podcast_dir, d))],
-                reverse=True
-            )[0]
-        except (IndexError, FileNotFoundError) as e:
-            logger.error(f"Error finding latest podcast directory: {str(e)}")
-            return jsonify({"error": "No podcast directories found"}), 404
-
+        
         # Build the full path to the MP3 file
-        podcast_audio_path = os.path.join(podcast_dir, latest_podcast_dir, f"interaction_{num}.mp3")
+        podcast_audio_path = os.path.join(podcast_dir, filename, f"interaction_{num}.mp3")
         logger.info(f"Podcast audio path: {podcast_audio_path}")
         if not os.path.exists(podcast_audio_path):
             logger.error(f"Audio file not found: {podcast_audio_path}")
             return jsonify({"error": "File not found"}), 404
 
         # Serve the file
-        return send_from_directory(os.path.join(podcast_dir, latest_podcast_dir), f"podcast_audio.mp3", as_attachment=True)
+        return send_from_directory(os.path.dirname(podcast_audio_path), os.path.basename(podcast_audio_path), as_attachment=True)
     
     except Exception as e:
         logger.error(f"Error serving file {filename}: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
-
-
 @app.route("/get/transcripts", methods=["GET"])
 def get_all_transcript_files():
     """Returns a list of all transcript files and their metadata."""
