@@ -47,7 +47,7 @@ class NewsPodcastPipeline:
     def generate_podcast(self) -> str:
         # Execute the pipeline
         print("Scraping news...")
-        categories = ["politics", "technology", "business"]
+        categories = ["Urban Planning", "Beekeeping", "Astrobiology", "Minimalist Living", "Cryptography", "Sumo Wrestling", "Mushroom Foraging", "Antique Restoration"]
         topic_classifier  = self.interest_classifier.interest_classify(categories)
         topics = self.parse_topic_classifier(topic_classifier)
         topics = topics[0:min(len(topics), 3)]

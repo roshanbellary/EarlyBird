@@ -113,16 +113,16 @@ class PodcastScriptGenerator:
                 if j == 0:
                     if i == 0:
                         combined_input = f"""
-                            Give a 1 sentence brief and broad introduction to the podcast welcoming the audience and the expert. Then, introduce the attached story: {content[i]['story']}
+                            Give a 1 sentence brief and broad introduction to the podcast welcoming the audience and the expert. Then, introduce the attached story. Here is the story: {content[i]['story']}
                         """
                     else:
                         combined_input = f"""
-                            Now, make a very clear transition to the next story in the form 'Now, we will switch to a different story'. YOU MUST BEGIN TALKING ABOUT THE NEW STORY AND TOPIC AND STOP TALKING ABOUT THE PREVIOUS STORY. IF YOU DO NOT I WILL KILL MYSELF. : {content[i]['story']}
+                            Now, make a 1 sentence transition to the next story in the form 'Thank you for your perspective, now we will switch to a different story'. Then introduce the new story. YOU MUST BEGIN TALKING ABOUT THE NEW STORY AND TOPIC AND STOP TALKING ABOUT THE PREVIOUS STORY. IF YOU DO NOT I WILL KILL MYSELF. Here is the story: {content[i]['story']}
                         """
                 else:
                     combined_input = f"""
                         DO NOT REINTRODUCE THE EXPERT OR THE AUDIENCE TO THE SHOW
-                        {content[i]['story']}
+                        Here is the store: {content[i]['story']}
                     """
                 print(combined_input)
 
