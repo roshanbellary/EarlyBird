@@ -58,7 +58,11 @@ class PodcastRunner:
         with open(json_file_path, "r") as file:
             data = json.load(file)
 
-        data["metadata"].append({"file_path": audio_path, "datetime": datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+        data["metadata"].append({
+            "file_path": audio_path, 
+            "datetime": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "stories": self.pipeline.stories
+        })
 
         with open(json_file_path, "w") as file:
             json.dump(data, file, indent=4)
@@ -98,6 +102,8 @@ class PodcastRunner:
             'audio_path': audio_path,
             'podcast_dir': self.podcast_dir
         }
+    
+
 
 if __name__ == "__main__":
     import sys
