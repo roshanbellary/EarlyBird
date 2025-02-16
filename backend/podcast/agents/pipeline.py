@@ -13,6 +13,7 @@ from langchain.memory import ConversationBufferMemory
 from typing import List, Dict
 import os
 import re
+import json
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -83,24 +84,45 @@ class NewsPodcastPipeline:
         # return result
     
     # filepath- current audio file playing
-    def user_ask_expert(question: str, filepath: str) -> str:
-        json_file_path = "finished_podcasts/podcast_metadata.json"
+    def user_ask_expert(self, question: str, filepath: str) -> str:
+        # Use absolute path matching the one in podcast.py
+        self.project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        json_file_path = os.path.join(
+            self.project_root,
+            'backend',
+            'podcast',
+            'finished_podcasts',
+            'podcast_metadata.json'
+        )
+        
+        # Debug prints
+        print(f"Looking for metadata file at: {json_file_path}")
+        print(f"Searching for filepath: {filepath}")
+        
         with open(json_file_path, "r") as file:
             data = json.load(file)
+            # Debug print
+            print("Available filepaths in metadata:", [p.get("file_path") for p in data["metadata"]])
 
         i = int(filepath[filepath.rfind('.mp3') - 1])
+        stories = None  # Initialize stories variable
         for podcast in data["metadata"]:
             if filepath in podcast["file_path"]:
                 stories = podcast["stories"]
                 break
+                
+        if stories is None:  # Add error handling
+            raise ValueError(f"No podcast found with filepath: {filepath}")
 
         mistral_api_key=os.getenv("MISTRAL_API_KEY")
         script_generator = PodcastScriptGenerator(mistral_api_key)
         script_generator.chat_history.append(f"<HOST{i}>{question}</HOST{i}>")
-        ans = script_generator.generate_response(script_generator.expert_chain, stories[i / 2]["story"][0]['draft'])
+        ans = script_generator.generate_response(script_generator.expert_chain, stories[i // 2]["story"][0]['draft'])
 
-        audio_generator = PodcastAudioGenerator()
-        interrupt_path = filepath[:filepath.rfind('\\')] + '\\' + 'podcast_interrupt_' + str(i) + '.mp3'
+        # Get the directory from the input filepath
+        output_dir = os.path.dirname(filepath)
+        audio_generator = PodcastAudioGenerator(output_dir=output_dir)
+        interrupt_path = os.path.join(output_dir, f"podcast_interrupt_{i}.mp3")
         audio_generator.generate_interrupt_response(ans, interrupt_path)
         return interrupt_path
 
@@ -114,4 +136,12 @@ if __name__ == "__main__":
         openai_api_key=os.getenv("OPENAI_API_KEY"),
         mistral_api_key=os.getenv("MISTRAL_API_KEY")
     )
-    pipeline.generate_podcast()
+
+    # Test user_ask_expert
+    filepath = "/Users/albert/Documents/coding_projects/EarlyBird/backend/podcast/finished_podcasts/podcast_20250216_001413_3b8ba9c7/interaction_1.mp3"  # Updated filepath
+    question = "What are the key points about this topic?"
+    result = pipeline.user_ask_expert(question, filepath)
+    print(f"Generated interrupt file: {result}")
+
+    # Test generate_podcast
+    # pipeline.generate_podcast()
