@@ -48,8 +48,7 @@ class NewsPodcastPipeline:
         # Execute the pipeline
         print("Scraping news...")
         categories = ["politics", "technology", "business"]
-        prompt = "Here are the categories the user is interested in:".format(", ".join(categories))
-        topic_classifier  = self.interest_classifier.interest_classify(prompt)
+        topic_classifier  = self.interest_classifier.interest_classify(categories)
         topics = self.parse_topic_classifier(topic_classifier)
         topics = topics[0:min(len(topics), 3)]
         print("Generated Topics:", topics)
@@ -66,7 +65,9 @@ class NewsPodcastPipeline:
             print(f"Drafting story for {topic}...")
             drafted_stories = self.drafter.draft_stories(researched_stories)
             stories.append({"story": drafted_stories, "topic": topic})
+            print(drafted_stories)
         script = self.script_generator.generate_script(stories)
+        print(script)
         return script
         # print("Generated Podcast Scripts:", result)
         # return result
