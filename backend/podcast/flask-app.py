@@ -1,4 +1,5 @@
 from flask import Flask, request, send_from_directory, jsonify
+from flask_cors import CORS
 import os
 import logging
 from podcast import PodcastRunner
@@ -18,6 +19,7 @@ class Config:
     PORT = int(os.getenv('FLASK_PORT', 8000))
 
 app = Flask(__name__)
+CORS(app)
 app.config.from_object(Config)
 
 @app.route("/", methods=["GET"])
