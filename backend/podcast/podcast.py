@@ -7,19 +7,27 @@ load_dotenv()  # Load environment variables from .env file
 
 class PodcastRunner:
     def __init__(self):
+        # Get the absolute path to the project root
+        self.project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        
+        # Define the output directory with 'backend' prefix
+        self.output_dir = os.path.join(self.project_root, 'backend', 'podcast', 'agents', 'audio', 'finished_podcasts')
+        # Create the directory if it doesn't exist
+        os.makedirs(self.output_dir, exist_ok=True)
+        
         self.pipeline = NewsPodcastPipeline(
             perplexity_api_key=os.getenv("PERPLEXITY_API_KEY"),
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             mistral_api_key=os.getenv("MISTRAL_API_KEY")
         )
-        self.audio_generator = PodcastAudioGenerator(
-            api_key=os.getenv("ELEVENLABS_API_KEY")
-        )
+        # Pass the output directory to PodcastAudioGenerator
+        self.audio_generator = PodcastAudioGenerator(output_dir=self.output_dir)
 
     def run(self):
         script = self.pipeline.generate_podcast()
         print("Script generated, generating audio...")
-        self.audio_generator.generate_audio(script)
+        audio_path = self.audio_generator.generate_audio(script)
+        print(f"Podcast saved to: {audio_path}")
 
 if __name__ == "__main__":
     runner = PodcastRunner()

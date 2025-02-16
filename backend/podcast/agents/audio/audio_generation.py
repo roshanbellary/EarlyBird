@@ -9,10 +9,10 @@ from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 
 class PodcastAudioGenerator:
-    def __init__(self):
-        self.ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_KEY")
+    def __init__(self, output_dir=None):
+        self.ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
         if not self.ELEVENLABS_API_KEY:
-            raise ValueError("Please set the ELEVENLABS_KEY environment variable.")
+            raise ValueError("Please set the ELEVENLABS_API_KEY environment variable.")
 
         # Map speaker names to voice IDs
         self.SPEAKER_VOICES = {
@@ -23,8 +23,12 @@ class PodcastAudioGenerator:
         # Initialize the ElevenLabs client
         self.client = ElevenLabs(api_key=self.ELEVENLABS_API_KEY)
         
-        # Create audio files directory if it doesn't exist
-        self.audio_dir = os.path.join('backend', 'podcast', 'agents', 'audio', 'audio_files')
+        # Use the provided output directory or default to the audio_files directory
+        if output_dir:
+            self.audio_dir = output_dir
+        else:
+            # Fallback to the default directory
+            self.audio_dir = os.path.join('backend', 'podcast', 'agents', 'audio', 'finished_podcasts')
         os.makedirs(self.audio_dir, exist_ok=True)
 
     def text_to_speech_file(self, text: str, voice_id: str) -> str:
