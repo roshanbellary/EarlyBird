@@ -12,13 +12,10 @@ from podcast.agents.pipeline import NewsPodcastPipeline
 from podcast.agents.pipeline import NewsPodcastPipeline
 from typing import Dict, Any
 import json
-<<<<<<< HEAD
 
 from global_instances import rl_model, graph
-
-=======
->>>>>>> afff0e1fa6a1c14c0104a1de41bac770724c91c1
 import whisper
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
