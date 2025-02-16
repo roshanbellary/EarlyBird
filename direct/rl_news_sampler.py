@@ -16,11 +16,6 @@ if __name__ == '__main__':
     merger = Merger(db_path = url)
     articles = merger.merge()
 
-    _indx_count = 0
-    for article in articles:
-        article._id = _indx_count
-        _indx_count += 1
-
     print(f"Total number of articles: {len(articles)}")
     
     # Initialize the model.
@@ -48,20 +43,20 @@ if __name__ == '__main__':
         # score.append(3)
 
     # Seed the model with user-specified topics.
-    model.seeding(seed_embeddings=topic_embeddigns, seed_scores=score, seed_lr=15.0)
+    model.seeding(seed_embeddings=topic_embeddigns, seed_scores=score)
 
     # use user input
     while True:
         user_input = input("Enter 'next' to get the next article, or 'exit' to quit: ")
         if user_input.lower() == 'next':
             print("Getting the next article...")
-            next_article = model.return_next_articles(num_articles=1)[0]
+            next_article = model.return_next_articles(num_articles=5)[0]
             print(f"ID: {next_article.id}, Title: {next_article.title}, Section: {next_article.section}")
 
             # get input from user
             user_input = input("Enter your score (1-100): ")
             article_index = int(next_article._id)  # assuming id is the index as a string
-            model.feedback(article_index, score=80)
+            model.feedback(article_index, score=int(user_input))
 
         elif user_input.lower() == 'exit':
             break

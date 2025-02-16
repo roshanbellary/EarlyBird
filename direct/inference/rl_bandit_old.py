@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 import numpy as np
 from retrieval.merger import Article
 
@@ -47,7 +46,7 @@ class HybridLinUCBModel:
     """
     
     def __init__(self, articles, alpha=1.0, learning_rate=1.0, 
-                 stabilization=0.001, feedback_exponent=2.0, last_n_hours=96):
+                 stabilization=0.001, feedback_exponent=2.0):
         """
         Initialize the HybridLinUCBModel.
         
@@ -66,29 +65,7 @@ class HybridLinUCBModel:
             Exponent to weight feedback (default is 2.0). For a feedback score s (1-100),
             reward is computed as: reward = sign(s-50) * (|s-50|/50)^(feedback_exponent).
         """
-
-        # date is in format of "2025-01-01T00:44:39+0000"
-
-        # filter articles has date object to only be in the last_n_hours
-        # Ensure datetime.now() is timezone-aware
-        now = datetime.now(timezone.utc)
-
-        # Filter articles to only include those from the last `last_n_hours`
-        articles = [
-            article for article in articles
-            if (now - datetime.strptime(article.date, "%Y-%m-%dT%H:%M:%S%z")).total_seconds() < last_n_hours * 3600
-        ]
-
-
-        _indx_count = 0
-        for article in articles:
-            article._id = _indx_count
-            _indx_count += 1
-
-        self.articles: list[Article] = articles
-
-        print(len(self.articles))
-
+        self.articles = articles
         self.n_articles = len(articles)
         
         # Assume that each article.embedding is a list of floats; convert them to a NumPy array.
@@ -171,7 +148,7 @@ class HybridLinUCBModel:
         beta_hat = self.A0_inv @ self.b0  # shape (k, 1)
         
         scores = []  # list of tuples: (score, article_index)
-
+        
         # Compute the LinUCB score for each unreturned article.
         for a in self.unreturned_articles:
             x = self.embeddings[a].reshape(self.d, 1)
@@ -189,7 +166,7 @@ class HybridLinUCBModel:
             
             score = reward_pred + bonus
             scores.append((score, a))
-
+        
         # Sort articles by descending score.
         scores.sort(key=lambda tup: tup[0], reverse=True)
         

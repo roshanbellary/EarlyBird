@@ -20,6 +20,8 @@ class Article:
 
         self.embedding = embedding
 
+        self.date = all_data["pub_date"]
+
         self._id = None
 
     # allow hashing
