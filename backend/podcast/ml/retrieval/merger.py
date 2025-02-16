@@ -24,6 +24,8 @@ class Article:
 
         self._id = None
 
+        self.interest_score = 0
+
     # allow hashing
     def __hash__(self):
         return hash(self.id)
