@@ -97,7 +97,7 @@ class NewsPodcastPipeline:
         mistral_api_key=os.getenv("MISTRAL_API_KEY")
         script_generator = PodcastScriptGenerator(mistral_api_key)
         script_generator.chat_history.append(f"<HOST{i}>{question}</HOST{i}>")
-        ans = script_generator.generate_response(self.script_generator.expert_chain, stories[i / 2]["story"][0]['draft'])
+        ans = script_generator.generate_response(script_generator.expert_chain, stories[i / 2]["story"][0]['draft'])
 
         audio_generator = PodcastAudioGenerator()
         interrupt_path = filepath[:filepath.rfind('\\')] + '\\' + 'podcast_interrupt_' + str(i) + '.mp3'
