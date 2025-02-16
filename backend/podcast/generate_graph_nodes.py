@@ -40,6 +40,7 @@ class InterestGraph:
                 closest_article = node
         
         category = closest_article.section
+        print(category)
         delta = 75
         for i in range(len(self.nodes)):
             if self.nodes[i].section == category:

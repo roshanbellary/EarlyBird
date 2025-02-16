@@ -61,6 +61,7 @@ const PodcastGraph: React.FC = () => {
   // Handler for click events on the plot
   const handlePlotClick = async (event: any) => {
     if (event && event.points && event.points.length > 0) {
+      console.log('click event');
       const point = event.points[0];
       const xCoord = point.x;
       const yCoord = point.y;
@@ -86,14 +87,14 @@ const PodcastGraph: React.FC = () => {
             y,
             z,
             mode: 'markers+text',
-            marker: { size: 8, color: colors }, // Increased marker size
+            marker: { size: 10, color: colors }, // Increased marker size
             type: 'scatter3d',
             text: labels,
             hoverinfo: 'text',
             textposition: 'top center',
             textfont: {
-              size: 12, // Increased text size
-              color: '#ffffff', // White text color
+              size: 15, // Increased text size
+              color: '#A6EC99', // White text color
             },
           },
         ]}
@@ -104,7 +105,7 @@ const PodcastGraph: React.FC = () => {
             yaxis: { visible: false },
             zaxis: { visible: false },
             camera: {
-              eye: { x: 0.5, y: 0.5, z: 0.5 }, // Adjust these values to set the desired zoom level
+              eye: { x: 0.4, y: 0.4, z: 0.4 }, // Adjust these values to set the desired zoom level
             },
             aspectmode: 'data', // Ensures the aspect ratio follows the data
           },
