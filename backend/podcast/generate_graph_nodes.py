@@ -41,7 +41,7 @@ class InterestGraph:
         
         category = closest_article.section
         print(category)
-        delta = 75
+        delta = 100
         for i in range(len(self.nodes)):
             if self.nodes[i].section == category:
                 self.rl_model.feedback(i, delta)
