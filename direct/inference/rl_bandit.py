@@ -99,6 +99,7 @@ class HybridLinUCBModel:
         
         # Keep track of which articles have not yet been returned.
         self.unreturned_articles = set(range(self.n_articles))
+        self._all_articles = set(range(self.n_articles))
     
     def reset(self):
         """
@@ -113,7 +114,7 @@ class HybridLinUCBModel:
         """
         return self.learning_rate / (1 + self.stabilization * self.num_updates)
     
-    def return_next_articles(self, num_articles):
+    def return_next_articles(self, num_articles, update_state=True):
         """
         Return the next best 'num_articles' articles (as a list of Article objects)
         from the set of unreturned articles. This method uses the hybrid LinUCB score:
@@ -141,7 +142,7 @@ class HybridLinUCBModel:
         list of Article
             A list of Article objects selected for recommendation.
         """
-        if not self.unreturned_articles:
+        if update_state and not self.unreturned_articles:
             raise Exception("All articles have been returned. Call reset() to start over.")
         
         # Compute global beta_hat.
@@ -150,7 +151,8 @@ class HybridLinUCBModel:
         scores = []  # list of tuples: (score, article_index)
         
         # Compute the LinUCB score for each unreturned article.
-        for a in self.unreturned_articles:
+        loop_articles = self.unreturned_articles if update_state else self._all_articles
+        for a in loop_articles:
             x = self.embeddings[a].reshape(self.d, 1)
             z = x  # using the same vector for the shared feature
             theta_hat = self.A_inv[a] @ (self.b[a] - self.B[a] @ beta_hat)
@@ -190,8 +192,9 @@ class HybridLinUCBModel:
                     break
         
         # Mark the selected articles as returned.
-        for a in selected:
-            self.unreturned_articles.remove(a)
+        if update_state:
+            for a in selected:
+                self.unreturned_articles.remove(a)
         
         # Return the corresponding Article objects.
         return [self.articles[a] for a in selected]
