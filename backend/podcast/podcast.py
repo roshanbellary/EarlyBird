@@ -4,12 +4,13 @@ from datetime import datetime
 from dotenv import load_dotenv
 from agents.audio.audio_generation import PodcastAudioGenerator
 from agents.pipeline import NewsPodcastPipeline
+from agents.pipeline_one_shot import NewsPodcastPipelineOneShot
 import json
 
 load_dotenv()  # Load environment variables from .env file
 
 class PodcastRunner:
-    def __init__(self):
+    def __init__(self, use_one_shot=False):
         # Get the absolute path to the project root
         self.project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         
@@ -26,7 +27,10 @@ class PodcastRunner:
         # Create the directory if it doesn't exist
         os.makedirs(self.podcast_dir, exist_ok=True)
         
-        self.pipeline = NewsPodcastPipeline(
+        # Choose which pipeline to use based on use_one_shot parameter
+        PipelineClass = NewsPodcastPipelineOneShot if use_one_shot else NewsPodcastPipeline
+        
+        self.pipeline = PipelineClass(
             perplexity_api_key=os.getenv("PERPLEXITY_API_KEY"),
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             mistral_api_key=os.getenv("MISTRAL_API_KEY")
@@ -121,7 +125,11 @@ class PodcastRunner:
 
 if __name__ == "__main__":
     import sys
-    runner = PodcastRunner()
+    # Use regular pipeline
+    # runner = PodcastRunner(use_one_shot=False)
+
+    # Use one-shot pipeline
+    runner = PodcastRunner(use_one_shot=True)
     
     if len(sys.argv) > 1:
         transcript_path = sys.argv[1]
