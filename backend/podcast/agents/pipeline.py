@@ -3,7 +3,7 @@ from .researcher import DeepResearchAgent
 from .story_drafter import StoryDrafterAgent
 from .script_generator import PodcastScriptGenerator
 from .interest_classifier import InterestClassifierAgent
-from agents.audio.audio_generation import PodcastAudioGenerator, generate_interrupt_response
+from .audio.audio_generation import PodcastAudioGenerator
 from langchain.agents import Tool, AgentExecutor, create_react_agent
 from langchain_community.chat_models import ChatOpenAI
 from langchain.tools import BaseTool
@@ -84,7 +84,16 @@ class NewsPodcastPipeline:
     
     # filepath- current audio file playing
     def user_ask_expert(question: str, filepath: str) -> str:
+        json_file_path = "finished_podcasts/podcast_metadata.json"
+        with open(json_file_path, "r") as file:
+            data = json.load(file)
+
         i = int(filepath[filepath.rfind('.mp3') - 1])
+        for podcast in data["metadata"]:
+            if filepath in podcast["file_path"]:
+                stories = podcast["stories"]
+                break
+
         mistral_api_key=os.getenv("MISTRAL_API_KEY")
         self.script_generator = PodcastScriptGenerator(mistral_api_key)
         self.script_generator.chat_history.append(f"<HOST{i}>{question}</HOST{i}>")
