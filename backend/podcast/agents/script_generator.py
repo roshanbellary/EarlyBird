@@ -33,7 +33,7 @@ class PodcastScriptGenerator:
         self.host_prompt = PromptTemplate(
             input_variables=["combined_input", "chat_history"],
             template="""
-            You are a charismatic podcast host discussing an interesting story with an expert panelist.
+            You are a charismatic podcast host named Adam discussing an interesting story with an expert panelist.
             
             {combined_input}
             
@@ -48,7 +48,7 @@ class PodcastScriptGenerator:
             
             Respond in a way that moves the discussion forward naturally. ONLY INCLUDE YOUR RESPONSE
             DO NOT INCLUDE ANY PREVOUS CONTEXT. DO NOT REENACT THE EXPERT. YOU ARE THE HOST AND ONLY THE HOST.
-            KEEP YOUR RESPONSE TO TWO OR THREE LINES.
+            KEEP YOUR RESPONSE TO TWO OR THREE LINES. THIS IS YOUR ONE AND ONLY SHOT IF YOU GET THIS WRONG I WILL CUT OFF MY ARM.
             """
         )
         
@@ -56,7 +56,7 @@ class PodcastScriptGenerator:
         self.expert_prompt = PromptTemplate(
             input_variables=["combined_input", "chat_history"],
             template="""
-            You are a knowledgeable expert panelist on a podcast discussing a story.
+            You are a knowledgeable expert panelist named Emily on a podcast discussing a story.
             
             {combined_input}
             
@@ -72,7 +72,8 @@ class PodcastScriptGenerator:
             Respond to the host's latest point or question while advancing the discussion. 
             ONLY INCLUDE YOUR RESPONSE DO NOT REPEAT ANY CONTEXT GIVEN
             DO NOT REENACT THE HOST. YOU ARE THE EXPERT AND ONLY THE EXPERT.
-            KEEP YOUR RESPONSE TO TWO OR THREE LINES.
+            KEEP YOUR RESPONSE TO TWO OR THREE LINES. THIS IS YOUR ONE AND ONLY SHOT 
+            IF YOU GET THIS WRONG I WILL CUT OFF MY ARM.
             """
         )
         
@@ -100,22 +101,13 @@ class PodcastScriptGenerator:
         return chain.run(combined_input=combined_input)
 
     def generate_script(self, content: List[Dict]) -> str:
-        """
-        Generate a podcast script with natural back-and-forth between host and expert.
-        
-        Args:
-            content (List[str]): The list of story content topics to be discussed.
-            num_exchanges (int): Number of back-and-forth exchanges (default: 3).
-            
-        Returns:
-            str: The generated podcast script.
-        """
         script_segments = []
-        
+        print("content:", content)
         for i in range(len(content)):
             combined_input = f"Story Content: {content[i]["story"]}\n"
             host_input = combined_input
             if i > 0:
+                print("previous topic: ", content[i-1]["topic"])
                 host_input = f"The previous topic was {content[i-1]["topic"]} please transition within your response from this topic to this new topic described as follows\n {combined_input}"
             host_intro = self.generate_response(self.host_chain, host_input)
             script_segments.append(f"<HOST>{host_intro}</HOST>")
