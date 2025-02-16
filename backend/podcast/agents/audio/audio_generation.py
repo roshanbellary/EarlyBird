@@ -8,6 +8,7 @@ from pydub import AudioSegment
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 
+
 class PodcastAudioGenerator:
     def __init__(self, output_dir=None):
         self.ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
@@ -16,19 +17,25 @@ class PodcastAudioGenerator:
 
         # Map speaker names to voice IDs
         self.SPEAKER_VOICES = {
-            "host": "9BWtsMINqrJLrRacOk9x",   # Aria
-            "expert": "CwhRBWXzGAHq8TQ4Fs17"  # Roger
+            "host": "9BWtsMINqrJLrRacOk9x",  # Aria
+            "expert": "CwhRBWXzGAHq8TQ4Fs17",  # Roger
         }
 
         # Initialize the ElevenLabs client
         self.client = ElevenLabs(api_key=self.ELEVENLABS_API_KEY)
-        
+
         # Use the provided output directory or default to the audio_files directory
         if output_dir:
             self.audio_dir = output_dir
         else:
             # Fallback to the default directory
-            self.audio_dir = os.path.join('backend', 'podcast', 'agents', 'audio', 'finished_podcasts')
+            self.podcast_dir = os.path.join(
+                self.project_root,
+                "backend",
+                "podcast",
+                "finished_podcasts",
+            )
+
         os.makedirs(self.audio_dir, exist_ok=True)
 
     def text_to_speech_file(self, text: str, voice_id: str) -> str:
@@ -37,10 +44,11 @@ class PodcastAudioGenerator:
             voice_id=voice_id,
             output_format="mp3_22050_32",
             text=text,
-            model_id="eleven_turbo_v2_5",  # Low latency model
+            #model_id="eleven_multilingual_v2",  # high quality model
+            model_id="eleven_flash_v2_5",  # Low latency model
             voice_settings=VoiceSettings(
-                stability=0.0,
-                similarity_boost=1.0,
+                stability=0.5,
+                similarity_boost=0.5,
                 style=0.0,
                 use_speaker_boost=True,
             ),
@@ -59,12 +67,12 @@ class PodcastAudioGenerator:
         """
         # Create a unique filename for the final podcast
         timestamp = uuid.uuid4()
-        output_file = os.path.join(self.audio_dir, f"podcast_{timestamp}.mp3")
+        output_file = os.path.join(self.audio_dir, f"podcast_audio.mp3")
 
         # Split by tags and process each section
         clips = []
-        parts = re.findall(r'<(HOST|EXPERT)>\s*(.*?)\s*</\1>', script, re.DOTALL)
-        
+        parts = re.findall(r"<(HOST|EXPERT)>\s*(.*?)\s*</\1>", script, re.DOTALL)
+
         if not parts:
             raise ValueError("No valid script sections found")
 
@@ -73,7 +81,9 @@ class PodcastAudioGenerator:
                 speaker = speaker.lower()
                 # Get the voice ID for the speaker, or default to host if missing
                 voice_id = self.SPEAKER_VOICES.get(speaker, self.SPEAKER_VOICES["host"])
-                print(f"Converting for {speaker}: {text[:100]}...")  # Print first 100 chars
+                print(
+                    f"Converting for {speaker}: {text[:100]}..."
+                )  # Print first 100 chars
                 mp3_path = self.text_to_speech_file(text, voice_id)
                 clips.append(mp3_path)
 
@@ -93,6 +103,7 @@ class PodcastAudioGenerator:
                 if os.path.exists(clip):
                     os.remove(clip)
             raise e
+
 
 if __name__ == "__main__":
     # Example usage

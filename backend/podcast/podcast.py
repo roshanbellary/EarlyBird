@@ -1,4 +1,6 @@
 import os
+import uuid
+from datetime import datetime
 from dotenv import load_dotenv
 from agents.audio.audio_generation import PodcastAudioGenerator
 from agents.pipeline import NewsPodcastPipeline
@@ -10,10 +12,18 @@ class PodcastRunner:
         # Get the absolute path to the project root
         self.project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         
-        # Define the output directory with 'backend' prefix
-        self.output_dir = os.path.join(self.project_root, 'backend', 'podcast', 'agents', 'audio', 'finished_podcasts')
+        # Create a unique directory for this podcast
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        podcast_id = str(uuid.uuid4())[:8]
+        self.podcast_dir = os.path.join(
+            self.project_root,
+            'backend',
+            'podcast', 
+            'finished_podcasts',
+            f'podcast_{timestamp}_{podcast_id}'
+        )
         # Create the directory if it doesn't exist
-        os.makedirs(self.output_dir, exist_ok=True)
+        os.makedirs(self.podcast_dir, exist_ok=True)
         
         self.pipeline = NewsPodcastPipeline(
             perplexity_api_key=os.getenv("PERPLEXITY_API_KEY"),
@@ -21,15 +31,82 @@ class PodcastRunner:
             mistral_api_key=os.getenv("MISTRAL_API_KEY")
         )
         # Pass the output directory to PodcastAudioGenerator
-        self.audio_generator = PodcastAudioGenerator(output_dir=self.output_dir)
+        self.audio_generator = PodcastAudioGenerator(output_dir=self.podcast_dir)
+
+    def save_transcript(self, script: str, filepath: str):
+        """Save the transcript to a file."""
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(script)
 
     def run(self):
+        # Generate the script
         script = self.pipeline.generate_podcast()
-        print("Script generated, generating audio...")
+        print("Script generated, saving transcript...")
+        
+        # Save the transcript
+        transcript_path = os.path.join(self.podcast_dir, 'transcript.txt')
+        self.save_transcript(script, transcript_path)
+        print(f"Transcript saved to: {transcript_path}")
+        
+        # Generate the audio
+        print("Generating audio...")
         audio_path = self.audio_generator.generate_audio(script)
         print(f"Podcast saved to: {audio_path}")
+        
+        return {
+            'transcript_path': transcript_path,
+            'audio_path': audio_path,
+            'podcast_dir': self.podcast_dir
+        }
+
+    def generate_from_transcript(self, transcript_path: str):
+        """Generate audio from an existing transcript file."""
+        # Create a unique directory for this test podcast
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        podcast_id = str(uuid.uuid4())[:8]
+        self.podcast_dir = os.path.join(
+            self.project_root, 
+            'podcast', 
+            'agents', 
+            'audio', 
+            'finished_podcasts',
+            f'test_podcast_{timestamp}_{podcast_id}'
+        )
+        os.makedirs(self.podcast_dir, exist_ok=True)
+
+        # Read the transcript
+        with open(transcript_path, 'r', encoding='utf-8') as f:
+            script = f.read()
+
+        # Generate the audio
+        print("Generating audio from transcript...")
+        audio_path = self.audio_generator.generate_audio(script)
+        print(f"Test podcast saved to: {audio_path}")
+        
+        return {
+            'transcript_path': transcript_path,
+            'audio_path': audio_path,
+            'podcast_dir': self.podcast_dir
+        }
 
 if __name__ == "__main__":
+    import sys
     runner = PodcastRunner()
-    runner.run()
+    
+    if len(sys.argv) > 1:
+        transcript_path = sys.argv[1]
+        if not os.path.exists(transcript_path):
+            print(f"Error: Transcript file not found: {transcript_path}")
+            sys.exit(1)
+        result = runner.generate_from_transcript(transcript_path)
+        print(f"\nPodcast generation from transcript complete!")
+        print(f"Output directory: {result['podcast_dir']}")
+        print(f"Original transcript: {result['transcript_path']}")
+        print(f"Generated audio: {result['audio_path']}")
+    else:
+        result = runner.run()
+        print(f"\nPodcast generation complete!")
+        print(f"Output directory: {result['podcast_dir']}")
+        print(f"Transcript: {result['transcript_path']}")
+        print(f"Audio: {result['audio_path']}")
 
