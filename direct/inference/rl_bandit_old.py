@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 import numpy as np
 from retrieval.merger import Article
 
@@ -47,7 +46,7 @@ class HybridLinUCBModel:
     """
     
     def __init__(self, articles, alpha=1.0, learning_rate=1.0, 
-                 stabilization=0.001, feedback_exponent=2.0, last_n_hours=96):
+                 stabilization=0.001, feedback_exponent=2.0):
         """
         Initialize the HybridLinUCBModel.
         
@@ -66,29 +65,7 @@ class HybridLinUCBModel:
             Exponent to weight feedback (default is 2.0). For a feedback score s (1-100),
             reward is computed as: reward = sign(s-50) * (|s-50|/50)^(feedback_exponent).
         """
-
-        # date is in format of "2025-01-01T00:44:39+0000"
-
-        # filter articles has date object to only be in the last_n_hours
-        # Ensure datetime.now() is timezone-aware
-        now = datetime.now(timezone.utc)
-
-        # Filter articles to only include those from the last `last_n_hours`
-        articles = [
-            article for article in articles
-            if (now - datetime.strptime(article.date, "%Y-%m-%dT%H:%M:%S%z")).total_seconds() < last_n_hours * 3600
-        ]
-
-
-        _indx_count = 0
-        for article in articles:
-            article._id = _indx_count
-            _indx_count += 1
-
-        self.articles: list[Article] = articles
-
-        print(len(self.articles))
-
+        self.articles = articles
         self.n_articles = len(articles)
         
         # Assume that each article.embedding is a list of floats; convert them to a NumPy array.
@@ -122,7 +99,6 @@ class HybridLinUCBModel:
         
         # Keep track of which articles have not yet been returned.
         self.unreturned_articles = set(range(self.n_articles))
-        self._all_articles = set(range(self.n_articles))
     
     def reset(self):
         """
@@ -137,7 +113,7 @@ class HybridLinUCBModel:
         """
         return self.learning_rate / (1 + self.stabilization * self.num_updates)
     
-    def return_next_articles(self, num_articles, update_state=True):
+    def return_next_articles(self, num_articles):
         """
         Return the next best 'num_articles' articles (as a list of Article objects)
         from the set of unreturned articles. This method uses the hybrid LinUCB score:
@@ -165,17 +141,16 @@ class HybridLinUCBModel:
         list of Article
             A list of Article objects selected for recommendation.
         """
-        if update_state and not self.unreturned_articles:
+        if not self.unreturned_articles:
             raise Exception("All articles have been returned. Call reset() to start over.")
         
         # Compute global beta_hat.
         beta_hat = self.A0_inv @ self.b0  # shape (k, 1)
         
         scores = []  # list of tuples: (score, article_index)
-
+        
         # Compute the LinUCB score for each unreturned article.
-        loop_articles = self.unreturned_articles if update_state else self._all_articles
-        for a in loop_articles:
+        for a in self.unreturned_articles:
             x = self.embeddings[a].reshape(self.d, 1)
             z = x  # using the same vector for the shared feature
             theta_hat = self.A_inv[a] @ (self.b[a] - self.B[a] @ beta_hat)
@@ -191,7 +166,7 @@ class HybridLinUCBModel:
             
             score = reward_pred + bonus
             scores.append((score, a))
-
+        
         # Sort articles by descending score.
         scores.sort(key=lambda tup: tup[0], reverse=True)
         
@@ -215,9 +190,8 @@ class HybridLinUCBModel:
                     break
         
         # Mark the selected articles as returned.
-        if update_state:
-            for a in selected:
-                self.unreturned_articles.remove(a)
+        for a in selected:
+            self.unreturned_articles.remove(a)
         
         # Return the corresponding Article objects.
         return [self.articles[a] for a in selected]

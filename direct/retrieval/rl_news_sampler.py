@@ -1,4 +1,4 @@
-from inference.rl_bandit import HybridLinUCBModel
+from direct.inference.rl_bandit_old import HybridLinUCBModel
 from retrieval.db.db_utils import DBUtils
 
 import numpy as np

@@ -1,27 +1,51 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+"use client"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useState } from "react"
 
-const previousPodcasts = [
-  { id: 1, title: "Yesterday's EarlyBird Tech", description: "Your morning dose of tech news", date: "2025-02-14" },
-  { id: 2, title: "Morning AI Insights", description: "Wake up to AI breakthroughs", date: "2025-02-13" },
-  { id: 3, title: "Dawn of Web Dev", description: "Early morning web development trends", date: "2025-02-12" },
-]
+const PreviousPodcasts = () => {
+  const [previousPodcasts, setPreviousPodcasts] = useState<{ title: string, date: string, topic: string }[]>([])
 
-export default function PreviousPodcasts() {
+  useEffect(() => {
+    const fetchPodcasts = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/get/transcripts")
+        const data = await response.json();
+        console.log(data);
+        let podcasts = []
+        for (const podcast of data["metadata"]["metadata"]) {
+            const date = new Date(podcast.datetime);
+            const formattedDate = `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+            const formattedTopic = `${podcast.stories[0].topic} \n ${podcast.stories[1].topic} \n ${podcast.stories[2].topic}`;
+            podcasts.push({
+            title: formattedDate,
+            date: podcast.datetime,
+            topic: formattedTopic,
+            })
+        }
+        setPreviousPodcasts(podcasts)
+      } catch (error) {
+        console.error("Error fetching podcasts:", error)
+      }
+    }
+
+    fetchPodcasts()
+  }, [])
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Previous EarlyBird Episodes</h1>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {previousPodcasts.map((podcast) => (
-          <Card key={podcast.id}>
+          <Card key={podcast.title}>
             <CardHeader>
               <CardTitle>{podcast.title}</CardTitle>
-              <CardDescription>{podcast.description}</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Date: {podcast.date}</p>
-              <audio controls src="#" className="w-full mt-2">
-                Your browser does not support the audio element.
-              </audio>
+              <ul className="list-disc pl-5 space-y-1">
+              {podcast.topic.split('\n').map((topic, index) => (
+                <li key={index}>{topic}</li>
+              ))}
+              </ul>
             </CardContent>
           </Card>
         ))}
@@ -29,4 +53,6 @@ export default function PreviousPodcasts() {
     </div>
   )
 }
+
+export default PreviousPodcasts
 

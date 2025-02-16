@@ -1,9 +1,10 @@
 from flask import Flask, request, send_from_directory, jsonify
+from flask_cors import CORS
 import os
 import logging
 from podcast import PodcastRunner
 from typing import Dict, Any
-
+import json
 # Configure logging
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -18,6 +19,7 @@ class Config:
     PORT = int(os.getenv('FLASK_PORT', 8000))
 
 app = Flask(__name__)
+CORS(app)
 app.config.from_object(Config)
 
 @app.route("/", methods=["GET"])
@@ -107,6 +109,24 @@ def download(filename):
         logger.error(f"Error serving file {filename}: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
+
+@app.route("/get/transcripts", methods=["GET"])
+def get_all_transcript_files():
+    """Returns a list of all transcript files and their metadata."""
+    try:
+        podcast_dir = app.config['PODCAST_DIR']
+        metadata_file_path = os.path.join(podcast_dir, "podcast_metadata.json")
+        
+        if not os.path.exists(metadata_file_path):
+            logger.error(f"Metadata file not found: {metadata_file_path}")
+            return jsonify({"error": "Metadata file not found"}), 404
+        
+        with open(metadata_file_path, 'r') as f:
+            metadata = json.load(f)
+            return jsonify({"metadata": metadata}), 200
+    except Exception as e:
+        logger.error(f"Error retrieving transcripts: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.errorhandler(Exception)
 def handle_error(error):
