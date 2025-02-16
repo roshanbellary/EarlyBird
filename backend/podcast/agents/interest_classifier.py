@@ -16,10 +16,10 @@ class InterestClassifierAgent:
                 input_variables=["user_interests"],
                 template="""
                 Here is a list of user interests: {user_interests}
-                Generate a list of 3 broad categories based on the user's interests. These categories should be distinct relatively unrelated from each other and heavily relate to the user's categories given:
+                Generate a list of 3 broad categories based on the user's interests. These categories should be distinct and relatively unrelated from each other and heavily relate to the user's categories given:
                 
                 The topics should be outputted as <TOPIC> topic 1 </TOPIC> <TOPIC> topic 2 </TOPIC> <TOPIC> topic 3 </TOPIC>
-                INCLUD THE <TOPIC> TAGS
+                INCLUDE THE <TOPIC> TAGS
                 """
             )
         else:
