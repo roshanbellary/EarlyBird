@@ -148,7 +148,6 @@ def get_all_transcript_files():
         logger.error(f"Error retrieving transcripts: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
-<<<<<<< HEAD
 @app.route("/api/graph_data/<mode>", methods=["GET"])
 def get_3d_graph(mode, selected_point=None):
     # if mode == 'init':
@@ -166,8 +165,6 @@ def get_3d_graph(mode, selected_point=None):
 
     # Return JSON in a format convenient for your frontend
     return jsonify({"nodes": nodes, "edges": []})
-=======
->>>>>>> afff0e1fa6a1c14c0104a1de41bac770724c91c1
 @app.route("/interrupt", methods=["POST"])
 def get_response():
     """Transcribes the audio blob and returns an expert response."""
