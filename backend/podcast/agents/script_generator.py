@@ -102,8 +102,7 @@ class PodcastScriptGenerator:
             if j == 0:
                 if len(content) == 1:
                     combined_input = f"""
-                        You must give a brief 1 sentence introduction to the podcast welcoming the host and the audience. 
-                        Then, give a 1 sentence introduction to the attached story in a headline format. YOU MUST FOLLOW THIS INTRODUCTION FORMAT.
+                        Give a 1 sentence introduction to the attached story in a headline format. YOU MUST FOLLOW THIS INTRODUCTION FORMAT.
                         Here is the story: {story_text}
                     """
                 else:
@@ -122,6 +121,8 @@ class PodcastScriptGenerator:
             i = 2 * (len(content) - 1) + j
             # Host's introduction/response
             host_intro = self.generate_response(self.host_chain, combined_input)
+            if len(content) == 1 and j == 0:
+                host_intro = f"Hello and welcome to EarlyBird!" + host_intro
             self.chat_history.append(f"<HOST{i}>{host_intro}</HOST{i}>")
 
             # Expert's response using the story text
