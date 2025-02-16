@@ -24,7 +24,7 @@ class PodcastScriptGenerator:
         
         # Use window memory to limit context size
         self.memory = ConversationBufferWindowMemory(
-            k=4,  # Only keep last 2 exchanges
+            k=6,  # Only keep last 2 exchanges
             input_key="combined_input",
             memory_key="chat_history"
         )
@@ -46,8 +46,8 @@ class PodcastScriptGenerator:
             4. Draw out interesting insights from the expert
             5. Use conversational language while staying professional
             
-            Respond in a way that moves the discussion forward naturally. ONLY INCLUDE YOUR RESPONSE
-            DO NOT INCLUDE ANY PREVOUS CONTEXT. DO NOT REENACT THE EXPERT. YOU ARE THE HOST AND ONLY THE HOST.
+            Respond in a way that moves the discussion forward naturally. Refer to the expert as 'Dr. Bellary'.
+            ONLY INCLUDE YOUR RESPONSE. DO NOT INCLUDE ANY PREVOUS CONTEXT. DO NOT REENACT THE EXPERT. YOU ARE THE HOST AND ONLY THE HOST.
             KEEP YOUR RESPONSE TO TWO OR THREE LINES. THIS IS YOUR ONE AND ONLY SHOT IF YOU GET THIS WRONG I WILL CUT OFF MY ARM.
             """
         )
@@ -56,7 +56,7 @@ class PodcastScriptGenerator:
         self.expert_prompt = PromptTemplate(
             input_variables=["combined_input", "chat_history"],
             template="""
-            You are a knowledgeable expert panelist named Emily on a podcast discussing a story.
+            You are a knowledgeable expert panelist named Dr. Bellary on a podcast discussing a story.
             
             {combined_input}
             

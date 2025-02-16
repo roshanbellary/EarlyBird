@@ -13,13 +13,8 @@ load_dotenv()
 
 perplexity_api_key=os.getenv("PERPLEXITY_API_KEY")
 openai_api_key=os.getenv("OPENAI_API_KEY")
-<<<<<<< HEAD
-
-test_component = 'story_drafter'
-=======
 mistral_api_key=os.getenv("MISTRAL_API_KEY")
 test_component = 'script_generator'
->>>>>>> 34de9a86a215a0859216fa611cbf66dcc2628582
 
 # Interest Classifier
 if test_component == 'interest_classifier':
@@ -152,47 +147,10 @@ if test_component == 'story_drafter':
 
 # Script Generator
 if test_component == 'script_generator':
-    host_prompt = PromptTemplate(
-                    input_variables=["combined_input", "chat_history"],
-                    template="""
-                    You are a charismatic podcast host discussing an interesting story with an expert panelist.
-                    
-                    {combined_input}
-                    
-                    Previous Discussion: {chat_history}
-                    
-                    Your role is to:
-                    1. If this is the start, introduce the story engagingly and ask the expert a thought-provoking question
-                    2. If responding to the expert, acknowledge their points and ask follow-up questions
-                    3. Keep the conversation natural and flowing
-                    4. Draw out interesting insights from the expert
-                    5. Use conversational language while staying professional
-                    
-                    Respond in a way that moves the discussion forward naturally.
-                    """
-                )
-    expert_prompt = PromptTemplate(
-                    input_variables=["combined_input", "chat_history"],
-                    template="""
-                    You are a knowledgeable expert panelist on a podcast discussing a story.
-                    
-                    {combined_input}
-                    
-                    Previous Discussion: {chat_history}
-                    
-                    Your role is to:
-                    1. Provide deep, insightful analysis of the story
-                    2. Draw from relevant expertise and experience
-                    3. Respond directly to the host's questions
-                    4. Add new perspectives and angles to the discussion
-                    5. Use clear, authoritative language while staying accessible
-                    
-                    Respond to the host's latest point or question while advancing the discussion.
-                    """
-                )
-
-    drafted_stories = [{"topic" : "SuperBowl", "story": '## Conducting Deep Research on the News Story: "City of Brotherly Love Soars: Philadelphia Honors Eagles After Super Bowl LIX Win"\n\nTo conduct a deep research on this news story, we can break down the task into several key sections:\n\n### 1. Historical Context\n*Philadelphia\'s Nickname: Philadelphia is known as the "City of Brotherly Love," a name derived from the Greek words *phileo (love) and adelphos (brother), chosen by William Penn[1][3]. This nickname reflects the city\'s historical emphasis on brotherly love and civic unity.\n\n### 2. Expert Opinions\n- *Cultural Significance: Experts often highlight Philadelphia\'s rich cultural diversity and historical significance, which contribute to its vibrant community[5].\n- **Sports Culture: The city\'s passionate sports fans, particularly those supporting the Philadelphia Eagles, are known for their dedication and enthusiasm[3].\n\n### 3. Related Events\n- **Super Bowl LIX Victory: If the Eagles won Super Bowl LIX, this would be a significant event for Philadelphia, likely prompting widespread celebrations and community gatherings.\n- **Community Response: The victory would likely be celebrated with parades, rallies, and other community events, showcasing the city\'s spirit of brotherly love and civic pride.\n\n### 4. Statistical Data\n- **Economic Impact: Large-scale events like Super Bowl victories can have a substantial economic impact on the city, boosting local businesses and tourism.\n- **Social Impact: Such events often bring the community together, reinforcing social bonds and civic engagement.\n\n### 5. Future Implications\n- **Community Engagement: The aftermath of a major sports victory can lead to increased community engagement and civic participation, as residents come together to celebrate and support local initiatives.\n- **Cultural Legacy: The celebration could also highlight Philadelphia\'s cultural legacy, reinforcing its reputation as a city of brotherly love and community spirit.\n\n### Format for Response\n\nTo format your response clearly, you can organize it into these sections:\n\n1. **Historical Context\n2. **Expert Opinions\n3. **Related Events\n4. **Statistical Data\n5. **Future Implications\n\nEach section should provide relevant information and insights into how Philadelphia\'s culture and community respond to significant events like a Super Bowl victory.'},
-                       {"topic" : "Elon Musk", "story": "<HOST>Welcome to the podcast, everyone! Today, we have an intriguing tale to share. Elon Musk, the renowned entrepreneur, made a $97.4 billion bid for OpenAI, only to be met with a surprising \"No Thanks.\" What led to this unexpected turn of events, and what does it mean for the future of AI innovation? Expert panelist, your thoughts?</HOST>\n\n<EXPERT>The rejection of Musk\'s bid for OpenAI raises questions about OpenAI\'s strategic priorities and their perception of Musk\'s role in the AI industry. It\'s also a reminder of the complexities in tech acquisitions, considering factors like market trends and competition.</EXPERT> <HOST>Host: Interesting insights, expert panelist. With the rejection of Musk\'s bid, how do you see the future of AI collaboration among tech giants and independent research organizations like OpenAI?</HOST><EXPERT>The rejection could potentially lead to a more competitive landscape in AI, with tech giants and independent research organizations seeking collaboration on their own terms. This may drive innovation and foster a more collaborative approach to AI development.</EXPERT><HOST>Host: That\'s an intriguing perspective, expert panelist. How do you envision the impact of this competitive landscape on the advancement of AI and its applications in various sectors?</HOST><EXPERT>The competitive landscape in AI may spur innovation and encourage collaboration, leading to more diverse and inclusive applications in art and beyond.</EXPERT><HOST>Ladies and gentlemen, thank you so much for joining us today on this enlightening podcast. We\'ve had the absolute pleasure of hosting our esteemed guest, [Expert\'s Name], who has shared with us invaluable insights and knowledge in the field of [topic].\n\nWe would like to extend our heartfelt thanks to our guest for their time, expertise, and for gracing us with such a captivating and informative conversation. Your wisdom and passion for [topic] have truly enriched our understanding and we are grateful for the opportunity to learn from you.\n\nTo our loyal audience, thank you for tuning in and for your continued support. Your engagement and feedback are what make these podcasts a success. We hope that you found today\'s discussion as enlightening and informative as we did.\n\nRemember, knowledge is a journey, and we are all lifelong learners. We encourage you to continue exploring this topic and to seek out further resources to deepen your understanding.\n\nUntil next time, keep exploring, keep learning, and keep shining. Goodnight, and thank you once again to our guest and our audience. Stay tuned for our next podcast episode, where we will delve into another exciting topic. Until then, stay curious and keep learning!</HOST>"}]
+    drafted_stories = [{"topic" : "Sports", "story": """In the bustling city of Philadelphia, the spirit of brotherly love soared to new heights as the Philadelphia Eagles clinched victory in Super Bowl LIX, defeating the Kansas City Chiefs with a resounding score of 40-22. This triumph marked the Eagles' second Super Bowl win, igniting a wave of jubilation among fans and players alike.\n\nCoach Nick Sirianni lauded the team's collective effort, emphasizing the essence of teamwork in achieving greatness. Jalen Hurts echoed this sentiment, attributing their success to the stellar performance of the defense, underscoring the age-old adage that defense wins championships.\n\nThe streets of Philadelphia came alive with fervor as the city hosted a grand parade on Valentine's Day to honor the victorious Eagles. Thousands of fans flocked to the parade route, camping out overnight to secure prime viewing spots from South Philadelphia to the iconic Philadelphia Museum of Art. The celebration was not just limited to the players on the field; players like Saquon Barkley and Cooper DeJean engaged with fans, sharing in the joy and excitement of the moment.\n\nStatistically, the Eagles' dominance in the game was evident, with Jalen Hurts showcasing his prowess by throwing for 221 yards and two touchdowns, in addition to a rushing score. The defense, led by standout performances from players like Josh Sweat and Cooper DeJean, made a significant impact by sacking Patrick Mahomes six times and forcing three crucial turnovers.\n\nLooking ahead, the Eagles' victory solidifies their status as a force to be reckoned with in the NFL, setting the stage for future success with key players like Jalen Hurts and Saquon Barkley leading the charge. The strong bond between the team and its passionate fan base, exemplified by the exuberant parade celebrations, bodes well for sustained fan engagement and unwavering support in the seasons to come.\n\nIn the heart of Philadelphia, a tale of triumph and unity unfolded, showcasing the power of teamwork, resilience, and unwavering dedication. As the Eagles soar to new heights, their victory in Super Bowl LIX will forever be etched in the annals of football history, a testament to the unbreakable bond between a team, its fans, and a city united in the pursuit of greatness."""},
+                       {"topic" : "Crime", "story": """In a quiet and close-knit community like Cherry Hill, New Jersey, the brutal stabbing of beloved veterinarian Dr. Michael Anthony sent shockwaves through the town. The arrest of 27-year-old Cristian Custodio-Aquino in connection with the murder brought a sense of relief but also raised questions about the motive behind such a heinous crime.\n\nDr. Anthony, known for his dedication to caring for animals, was found with multiple stab wounds in front of his home, leaving residents in mourning. The investigation, led by the Camden County Prosecutor’s Office Homicide Unit and Cherry Hill Police Department, uncovered crucial evidence linking Custodio-Aquino to the crime, including a pair of prescription glasses sold to him in Washington State.\n\nSecurity footage capturing a black sedan leaving the neighborhood around the time of the murder led authorities on a multi-state chase before apprehending the suspect in Fresno, California. The lack of a disclosed motive left the community puzzled, but the arrest and charges provided some reassurance in a community not accustomed to such violent crimes.\n\nAs Custodio-Aquino awaits extradition to New Jersey, the community grapples with the implications of this tragic event. The resolution of the case could impact trust in law enforcement and future investigations into similar crimes, shedding light on the rare occurrence of such violence in Cherry Hill.\n\nWith physical evidence and facts pointing to Custodio-Aquino's involvement, the case serves as a reminder of the fragility of safety in even the most peaceful communities. As the legal proceedings unfold, the story of Dr. Anthony's untimely death serves as a cautionary tale and a call for justice to be served in the face of senseless violence."""},
+                    #    {"topic" : ""}
+                    ]
     script_generator = PodcastScriptGenerator(mistral_api_key)
     script = script_generator.generate_script(drafted_stories)
     print(script)
