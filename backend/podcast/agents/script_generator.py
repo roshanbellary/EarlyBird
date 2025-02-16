@@ -9,7 +9,7 @@ import time
 
 
 class PodcastScriptGenerator:
-    def __init__(self, mistral_api_key: str):
+    def __init__(self, mistral_api_key: stsr):
         # Initialize LLMs for host and expert with different temperatures
         self.host_llm = ChatOpenAI(
             model_name="mistral-tiny",
@@ -106,7 +106,6 @@ class PodcastScriptGenerator:
         print(content)
         story_text = content[-1]["story"][0]['draft']
 
-<<<<<<< HEAD
         for j in range(2):
             if j == 0:
                 if len(content) == 1:
@@ -115,27 +114,6 @@ class PodcastScriptGenerator:
                         Then, introduce the attached story. YOU MUST FOLLOW THIS INTRODUCTION FORMAT.
                         Here is the story: {story_text}
                     """
-=======
-        for i in range(len(content)):
-            # Extract the story content from the nested structure
-            story_text = content[i]["story"][0]["draft"]
-
-            # print index and story text
-            print(f"Story {i}:")
-            print(story_text)
-            print("\n")
-
-            for j in range(2):
-                if j == 0:
-                    if i == 0:
-                        combined_input = f"""
-                            Give a brief and comforting introduction to the podcast and introduce the attached story: {story_text}
-                        """
-                    else:
-                        combined_input = f"""
-                            Now, briefly transition from the previous story to the attached story: {story_text}
-                        """
->>>>>>> 1a945ccd1ff01778f705bda59d0c0ce460f7833e
                 else:
                     combined_input = f"""
                         Now, give a 1 sentence transition to the new story in the form 'thank you for your input. now moving on to a new topic I would love to hear your opinion on the new story'. 
