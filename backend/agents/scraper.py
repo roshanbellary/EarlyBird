@@ -13,8 +13,16 @@ class NewsScraperAgent:
     def __init__(self, perplexity_api_key: str):
         self.perplexity = PerplexityAPI(perplexity_api_key)
 
-    def get_top_headlines(self, prompt):
-        data = self.perplexity.perplexity_query(["List the top headline from current events related to the user topic attached to this message. Format as follows:1. <HEADLINE>[First headline] </HEADLINE>", prompt])
+    def get_top_headlines(self, category):
+        prompt = f"""
+        Here is the user's topic of interest: {category}
+        List the top headline from current events related to the user's topic of interest ttached to this message. 
+        Just return the headline in the format below: <HEADLINE>[First headline] </HEADLINE>
+        DO NOT RETURN ANY OTHER TEXT
+        """
+        print(prompt)
+
+        data = self.perplexity.perplexity_query([prompt])
 
         if "choices" in data and len(data["choices"]) > 0:
             result = {
