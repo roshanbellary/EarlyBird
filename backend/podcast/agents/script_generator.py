@@ -7,28 +7,29 @@ from typing import Dict, List
 import os
 import time
 
+
 class PodcastScriptGenerator:
     def __init__(self, mistral_api_key: str):
         # Initialize LLMs for host and expert with different temperatures
         self.host_llm = ChatOpenAI(
             model_name="mistral-tiny",
             openai_api_base="https://api.mistral.ai/v1",
-            openai_api_key=mistral_api_key
+            openai_api_key=mistral_api_key,
         )
 
         self.expert_llm = ChatOpenAI(
             model_name="mistral-tiny",
             openai_api_base="https://api.mistral.ai/v1",
-            openai_api_key=mistral_api_key
+            openai_api_key=mistral_api_key,
         )
-        
+
         # Use window memory to limit context size
         self.memory = ConversationBufferWindowMemory(
             k=4,  # Only keep last 2 exchanges
             input_key="combined_input",
-            memory_key="chat_history"
+            memory_key="chat_history",
         )
-        
+
         # Updated host prompt
         self.host_prompt = PromptTemplate(
             input_variables=["combined_input", "chat_history"],
@@ -49,9 +50,9 @@ class PodcastScriptGenerator:
             Respond in a way that moves the discussion forward naturally. Refer to the expert as Dr. Bellary.
             ONLY INCLUDE YOUR RESPONSE. DO NOT PUT 'Host: ' AT THE BEGINNING OF THE LINE. DO NOT INCLUDE ANY PREVOUS CONTEXT. DO NOT REENACT THE EXPERT. YOU ARE THE HOST AND ONLY THE HOST.
             KEEP YOUR RESPONSE TO TWO OR THREE LINES. DO NOT NAME THE PODCAST. THIS IS YOUR ONE AND ONLY SHOT IF YOU GET THIS WRONG I WILL CUT OFF MY ARM.
-            """
+            """,
         )
-        
+
         # Updated expert prompt
         self.expert_prompt = PromptTemplate(
             input_variables=["combined_input", "chat_history"],
@@ -75,22 +76,22 @@ class PodcastScriptGenerator:
             DO NOT REENACT THE HOST. DO NOT PUT 'Dr. Bellary' AT BEGINNING OF THE LINE. YOU ARE THE EXPERT AND ONLY THE EXPERT.
             KEEP YOUR RESPONSE TO TWO OR THREE LINES. THIS IS YOUR ONE AND ONLY SHOT 
             IF YOU GET THIS WRONG I WILL CUT OFF MY ARM.
-            """
+            """,
         )
-        
+
         # Create LLM chains with updated configuration
         self.host_chain = LLMChain(
             llm=self.host_llm,
             prompt=self.host_prompt,
             memory=self.memory,
-            verbose=False
+            verbose=False,
         )
-        
+
         self.expert_chain = LLMChain(
             llm=self.expert_llm,
             prompt=self.expert_prompt,
             memory=self.memory,
-            verbose=False
+            verbose=False,
         )
 
     def generate_response(self, chain, combined_input: str) -> str:
@@ -103,54 +104,44 @@ class PodcastScriptGenerator:
 
     def generate_script(self, content: List[Dict]) -> str:
         script_segments = []
-        # print("content:", content)
 
         for i in range(len(content)):
-            # print(content[i]['story'])
-            for j in range(2):     
-                print(content[i]['topic'], j)           
-                # Ensure smooth transitions between topics
+            # Extract the story content from the nested structure
+            story_text = content[i]["story"][0]["draft"]
+
+            for j in range(2):
                 if j == 0:
                     if i == 0:
                         combined_input = f"""
-                            Give a 1 sentence brief and broad introduction to the podcast welcoming the audience and the expert. Then, introduce the attached story. Here is the story: {content[i]['story']}
+                            Give a brief and comforting introduction to the podcast and introduce the attached story: {story_text}
                         """
                     else:
                         combined_input = f"""
-                            Now, make a 1 sentence transition to the next story in the form 'Thank you for your perspective, now we will switch to a different story'. Then introduce the new story. YOU MUST BEGIN TALKING ABOUT THE NEW STORY AND TOPIC AND STOP TALKING ABOUT THE PREVIOUS STORY. IF YOU DO NOT I WILL KILL MYSELF. Here is the story: {content[i]['story']}
+                            Now, briefly transition from the previous story to the attached story: {story_text}
                         """
                 else:
-                    combined_input = f"""
-                        DO NOT REINTRODUCE THE EXPERT OR THE AUDIENCE TO THE SHOW
-                        Here is the store: {content[i]['story']}
-                    """
+                    combined_input = story_text
+
                 print(combined_input)
 
-                # if i > 0:
-                #     transition_text = f"""
-                #     Previously, we discussed {content[i-1]['topic']}. Now, let's transition to our next topic: {content[i]['topic']}.
-                #     """
-                #     combined_input = transition_text + "\n" + combined_input
-
-                # Host's introduction to the new topic
+                # Host's introduction/response
                 host_intro = self.generate_response(self.host_chain, combined_input)
                 script_segments.append(f"<HOST>{host_intro}</HOST>")
 
-                # Expert's response to the host
-                expert_response = self.generate_response(self.expert_chain, combined_input)
+                # Expert's response using the story text
+                expert_response = self.generate_response(self.expert_chain, story_text)
                 script_segments.append(f"<EXPERT>{expert_response}</EXPERT>")
 
-                # Add a wrap-up statement at the end
-                if i == len(content) - 1 and j == 1:
-                    closing_prompt = PromptTemplate(
-                        input_variables=["combined_input"],
-                        template="""
+        # Add final closing statement
+        if len(content) > 0:
+            closing_prompt = PromptTemplate(
+                input_variables=["combined_input"],
+                template="""
                         Provide a brief 1 sentence closing statement to wrap up the podcast, thanking the expert and audience.
-                        """
-                    )
-                    closing_chain = LLMChain(llm=self.host_llm, prompt=closing_prompt)
-                    closing = self.generate_response(closing_chain, combined_input)
-                    script_segments.append(f"<HOST>{closing}</HOST>")
+                        """,
+            )
+            closing_chain = LLMChain(llm=self.host_llm, prompt=closing_prompt)
+            closing = self.generate_response(closing_chain, combined_input)
+            script_segments.append(f"<HOST>{closing}</HOST>")
 
         return "\n\n".join(script_segments)
-

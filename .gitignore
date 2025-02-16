@@ -61,4 +61,4 @@ ios/build/
 direct
 
 #ignore the pocasts
-finished_podcasts/
+backend/podcast/finished_podcasts/
