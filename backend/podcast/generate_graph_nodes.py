@@ -1,6 +1,6 @@
 from sklearn.manifold import TSNE
-from ml.retrieval.merger import Merger
-from ml.inference.rl_bandit import HybridLinUCBModel
+from podcast.ml.retrieval.merger import Merger
+from podcast.ml.inference.rl_bandit import HybridLinUCBModel
 import numpy as np
 
 class InterestGraph:

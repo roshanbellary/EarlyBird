@@ -13,7 +13,7 @@ from podcast.agents.pipeline import NewsPodcastPipeline
 from typing import Dict, Any
 import json
 
-from global_instances import rl_model, graph
+from podcast.global_instances import rl_model, graph
 import whisper
 
 # Configure logging
