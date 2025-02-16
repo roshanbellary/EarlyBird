@@ -1,15 +1,12 @@
 import sys 
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-import sys 
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from flask import Flask, request, send_from_directory, jsonify
 from flask_cors import CORS
 import logging
 from podcast import PodcastRunner
-from podcast.agents.pipeline import NewsPodcastPipeline
-from podcast.agents.pipeline import NewsPodcastPipeline
+from agents.pipeline import NewsPodcastPipeline
+from agents.pipeline import NewsPodcastPipeline
 from typing import Dict, Any
 import json
 
@@ -148,8 +145,7 @@ def get_all_transcript_files():
         logger.error(f"Error retrieving transcripts: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
-<<<<<<< HEAD
-@app.route("/api/graph_data/<mode>", methods=["GET"])
+@app.route("/api/graph_init", methods=["GET"])
 def get_3d_graph(mode, selected_point=None):
     # if mode == 'init':
     #     graph.generate_init_nodes()
@@ -165,9 +161,8 @@ def get_3d_graph(mode, selected_point=None):
     nodes = [{'id': 1, 'position': [0, 0, 0]}]
 
     # Return JSON in a format convenient for your frontend
-    return jsonify({"nodes": nodes, "edges": []})
-=======
->>>>>>> afff0e1fa6a1c14c0104a1de41bac770724c91c1
+    return jsonify({"nodes": nodes, "edges": []}), 200
+
 @app.route("/interrupt", methods=["POST"])
 def get_response():
     """Transcribes the audio blob and returns an expert response."""

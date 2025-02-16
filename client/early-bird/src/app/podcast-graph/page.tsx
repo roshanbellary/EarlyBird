@@ -1,6 +1,9 @@
-"use client"
+"use client";
 import React, { useEffect, useState } from 'react';
-import Plot from 'react-plotly.js';
+import dynamic from 'next/dynamic';
+
+const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
+
 
 interface Node {
   id: number;
@@ -14,22 +17,18 @@ const PodcastGraph: React.FC = () => {
   const [z, setZ] = useState<number[]>([]);
 
   useEffect(() => {
-    const fetchNodes = async () => {
-      try {
-        const response = await fetch('http://localhost:8000/api/graph_data?mode=init');
-        const data = await response.json();
-        setNodes(data.nodes);
-      } catch (error) {
-        console.error('Error fetching graph data:', error);
-      }
-    };
-
-    fetchNodes();
-  }, []);
+    fetch(`/api/graph_init`)
+      .then(response => response.json())
+      .then(data => {
+          setNodes(data.nodes);
+      }).catch(error => {
+            console.error('Error fetching audio file:', error);
+        });
+}, []);
 
   // Separate useEffect for updating coordinates when nodes change
   useEffect(() => {
-    if (nodes.length > 0) {
+    if (nodes && nodes.length > 0) {
       setX(nodes.map((node) => node.position[0]));
       setY(nodes.map((node) => node.position[1]));
       setZ(nodes.map((node) => node.position[2]));
